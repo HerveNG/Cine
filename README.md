@@ -6,16 +6,18 @@ SaaS destiné aux auteurs, réalisateurs et producteurs africains — développe
 de projets audiovisuels, génération de documents assistée par IA, recherche
 et matching de financements, budgets et export de dossier.
 
-> **Statut : MVP — Phases 1 à 5 livrées.** Authentification, gestion des
+> **Statut : MVP — Phases 1 à 6 livrées.** Authentification, gestion des
 > utilisateurs, CRUD projets, tableau de bord, AI Writer (génération de
-> documents par IA, versionnés), Funding Intelligence (recherche et matching
-> à score explicable sur des financements réels), Budget & plan de
-> financement (catégories, sous-totaux calculés, calendrier de production)
-> et Monétisation (plans Gratuit/Pro/Studio, crédits IA réellement
-> appliqués) sont réellement fonctionnels et testés. Seul le module n8n
-> (Phase 6) n'est **pas encore implémenté** — voir
-> [docs/known-issues.md](docs/known-issues.md) pour le détail honnête de
-> ce qui manque, notamment l'absence de paiement en ligne réel.
+> documents par IA, versionnés, Anthropic ou OpenAI), Funding Intelligence
+> (recherche et matching à score explicable sur des financements réels),
+> Budget & plan de financement (catégories, sous-totaux calculés,
+> calendrier de production), Monétisation (plans Gratuit/Pro/Studio,
+> crédits IA réellement appliqués) et Automatisation (suivi de
+> financements, notifications, webhook n8n authentifié) sont réellement
+> fonctionnels et testés. Le workflow n8n lui-même n'est qu'un **modèle à
+> adapter** (cet environnement de développement ne fait pas tourner n8n)
+> — voir [docs/known-issues.md](docs/known-issues.md) pour le détail
+> honnête de ce qui manque, notamment l'absence de paiement en ligne réel.
 
 ## Stack
 
@@ -36,7 +38,7 @@ filmfund-africa/ (ce dépôt)
 ├── frontend/          # Next.js + TypeScript + Tailwind
 ├── backend/           # FastAPI (api/core/models/schemas/services/repositories/workers)
 ├── database/          # Doc du schéma (migrations réelles dans backend/alembic/)
-├── n8n/               # Automatisation (Phase 6, non connectée)
+├── n8n/               # Automatisation (Phase 6) — webhook réel, workflow modèle
 ├── prompts/           # Prompts IA versionnés (Phase 2, vide pour l'instant)
 ├── docs/              # Documentation, known-issues
 ├── scripts/           # Scripts transverses (voir backend/scripts/ pour le seed)
@@ -168,7 +170,7 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
 
 ---
 
-## Rapport de livraison — Phases 1 à 5
+## Rapport de livraison — Phases 1 à 6
 
 ### FEATURES IMPLEMENTED
 
@@ -234,13 +236,27 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
   (`PUT /api/v1/admin/users/{user_id}/plan`, protégée par le rôle
   `UserType.ADMIN`) plutôt qu'un faux bouton de paiement qui ne
   débiterait rien.
+- **Automatisation (Phase 6)** : suivi de financements (`FundingFollow`,
+  bouton "Suivre" sur `/financements` et sur les matches d'un projet),
+  notifications en base (`Notification`, page `/notifications`, badge de
+  non-lus dans l'en-tête), et `last_verified_at` sur chaque financement
+  (traçabilité de la dernière vérification). Point d'entrée
+  `POST /api/v1/integrations/n8n/funding-update`, protégé par un secret
+  partagé (header `X-N8N-Secret`, désactivé/503 si non configuré) : un
+  workflow n8n l'appelle après avoir détecté un changement réel sur le
+  site officiel d'un fonds, ce qui met à jour l'opportunité et notifie
+  tous ses suiveurs. Testé de bout en bout (suivre → simuler l'appel
+  webhook → notification reçue → marquer comme lu) — **le workflow n8n
+  lui-même est un modèle** (`n8n/workflows/funding-watch.example.json`)
+  à importer et adapter par fonds, pas une automatisation qui tourne
+  déjà (voir `n8n/README.md` et known-issues.md pour le détail).
 - Seed de démonstration (3 utilisateurs — dont un compte admin —, 3
   projets, 7 financements réels)
-- 38 tests backend automatisés, exécutés contre une vraie base PostgreSQL
+- 48 tests backend automatisés, exécutés contre une vraie base PostgreSQL
   (AI Writer forcé sur le provider `local` en tests — jamais d'appel réseau
   ni de dépendance à une clé API dans la suite automatisée ; le matching
-  de financements, les calculs de budget et les quotas de crédits sont
-  déterministes, sans IA)
+  de financements, les calculs de budget, les quotas de crédits et le
+  webhook n8n sont déterministes/authentifiés, sans dépendance externe)
 - Build frontend (TypeScript strict + ESLint) sans erreur
 
 ### FEATURES PARTIALLY IMPLEMENTED
@@ -269,10 +285,11 @@ Voir `.env.example` (racine) et `frontend/.env.local.example`.
 Voir sections 3 et 4 ci-dessus (`docker compose up --build`, ou backend +
 frontend séparément).
 
-### NEXT STEPS (Phase 6 et suivantes, cf. prompt maître)
+### NEXT STEPS (au-delà des 6 phases du prompt maître)
 
-1. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
-   notifications (ex. nouvelle session de dépôt sur un fonds suivi).
+1. **n8n** : construire un vrai workflow de veille par fonds à partir du
+   modèle (`n8n/workflows/funding-watch.example.json`) — la logique de
+   détection de changement par site officiel reste à écrire.
 2. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
    audit logs, OAuth Google.
 3. AI Writer : vérifier le provider OpenAI avec une vraie clé API (la
@@ -286,3 +303,5 @@ frontend séparément).
    financement (rapprochement budget ↔ financements obtenus).
 6. Monétisation : paiement en ligne réel (Stripe ou équivalent), pour que
    le changement de plan ne soit plus une action admin-only.
+7. Notifications : canaux additionnels (email, push) au-delà des
+   notifications en base consultées dans l'application.

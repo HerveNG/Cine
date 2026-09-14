@@ -7,7 +7,9 @@ from app.api.v1.endpoints import (
     dashboard,
     documents,
     funding,
+    integrations,
     milestones,
+    notifications,
     projects,
     subscription,
 )
@@ -21,4 +23,6 @@ api_router.include_router(budget.router)
 api_router.include_router(milestones.router)
 api_router.include_router(subscription.router)
 api_router.include_router(admin.router)
+api_router.include_router(notifications.router)
+api_router.include_router(integrations.router)
 api_router.include_router(dashboard.router)

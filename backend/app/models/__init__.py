@@ -5,3 +5,5 @@ from app.models.document import Document, DocumentType  # noqa: F401
 from app.models.funding_opportunity import FundingOpportunity  # noqa: F401
 from app.models.budget import BudgetCategory, BudgetLineItem  # noqa: F401
 from app.models.production_milestone import ProductionMilestone  # noqa: F401
+from app.models.funding_follow import FundingFollow  # noqa: F401
+from app.models.notification import Notification  # noqa: F401

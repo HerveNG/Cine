@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -49,22 +51,27 @@ class FundingRepository:
     def upsert_by_name(self, opportunity: FundingOpportunity) -> FundingOpportunity:
         stmt = select(FundingOpportunity).where(FundingOpportunity.name == opportunity.name)
         existing = self.db.execute(stmt).scalar_one_or_none()
+        opportunity.last_verified_at = datetime.now(timezone.utc)
         if existing is None:
             self.db.add(opportunity)
-        else:
-            for field in (
-                "organization",
-                "description",
-                "url",
-                "eligible_project_types",
-                "eligible_countries",
-                "eligible_stages",
-                "min_duration_minutes",
-                "max_duration_minutes",
-                "amount_label",
-                "application_info",
-                "is_active",
-            ):
-                setattr(existing, field, getattr(opportunity, field))
+            self.db.commit()
+            self.db.refresh(opportunity)
+            return opportunity
+        for field in (
+            "organization",
+            "description",
+            "url",
+            "eligible_project_types",
+            "eligible_countries",
+            "eligible_stages",
+            "min_duration_minutes",
+            "max_duration_minutes",
+            "amount_label",
+            "application_info",
+            "is_active",
+            "last_verified_at",
+        ):
+            setattr(existing, field, getattr(opportunity, field))
         self.db.commit()
-        return existing if existing is not None else opportunity
+        self.db.refresh(existing)
+        return existing

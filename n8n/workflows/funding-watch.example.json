@@ -1,0 +1,77 @@
+{
+  "name": "FilmFund Africa — Veille financements (exemple)",
+  "meta": {
+    "description": "Modèle à IMPORTER et ADAPTER dans une instance n8n — n'est pas un workflow prêt à l'emploi. Le nœud 'Vérifier le contenu' est un placeholder : la vraie logique de détection de changement doit être écrite par fonds surveillé (structure de page différente à chaque fois)."
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "weeks" }]
+        }
+      },
+      "name": "Toutes les semaines",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.imagesfrancophones.org/soutiens/fonds-image-de-la-francophonie/presentation",
+        "options": {}
+      },
+      "name": "Récupérer la page du fonds",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// PLACEHOLDER — à écrire par fonds surveillé.\n// Compare le contenu récupéré à la dernière valeur connue (stockée côté\n// n8n, ex. dans un nœud Postgres/NoSQL, ou via l'API FilmFund elle-même)\n// et ne transmet un objet en sortie QUE si un changement réel est\n// détecté (nouvelle session, montant modifié, deadline...).\n// Ne jamais transmettre un item si rien n'a changé.\nreturn items;"
+      },
+      "name": "Vérifier le contenu (placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FILMFUND_API_URL }}/api/v1/integrations/n8n/funding-update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-N8N-Secret", "value": "={{ $env.FILMFUND_N8N_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "name", "value": "Fonds Image de la Francophonie (OIF)" },
+            { "name": "organization", "value": "Organisation internationale de la Francophonie" },
+            { "name": "description", "value": "={{ $json.description }}" },
+            { "name": "url", "value": "https://www.imagesfrancophones.org/soutiens/fonds-image-de-la-francophonie/presentation" },
+            { "name": "amount_label", "value": "={{ $json.amount_label }}" },
+            { "name": "application_info", "value": "={{ $json.application_info }}" },
+            { "name": "change_summary", "value": "={{ $json.change_summary }}" }
+          ]
+        }
+      },
+      "name": "Notifier FilmFund Africa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Toutes les semaines": {
+      "main": [[{ "node": "Récupérer la page du fonds", "type": "main", "index": 0 }]]
+    },
+    "Récupérer la page du fonds": {
+      "main": [[{ "node": "Vérifier le contenu (placeholder)", "type": "main", "index": 0 }]]
+    },
+    "Vérifier le contenu (placeholder)": {
+      "main": [[{ "node": "Notifier FilmFund Africa", "type": "main", "index": 0 }]]
+    }
+  }
+}

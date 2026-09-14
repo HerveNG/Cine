@@ -159,6 +159,17 @@ export interface FundingOpportunity {
   max_duration_minutes: number | null;
   amount_label: string;
   application_info: string;
+  last_verified_at: string | null;
+  is_followed: boolean;
+  created_at: string;
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  body: string;
+  url: string | null;
+  is_read: boolean;
   created_at: string;
 }
 

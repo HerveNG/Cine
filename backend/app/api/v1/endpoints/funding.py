@@ -18,7 +18,7 @@ def list_funding_opportunities(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return FundingService(db).list_opportunities(project_type, country, search)
+    return FundingService(db).list_opportunities(project_type, country, search, current_user)
 
 
 @router.get("/projects/{project_id}/funding-matches", response_model=list[FundingMatchRead])
@@ -28,3 +28,21 @@ def get_project_funding_matches(
     current_user: User = Depends(get_current_user),
 ):
     return FundingService(db).get_matches_for_project(project_id, current_user)
+
+
+@router.post("/funding-opportunities/{opportunity_id}/follow", response_model=FundingOpportunityRead)
+def follow_funding_opportunity(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return FundingService(db).follow(opportunity_id, current_user)
+
+
+@router.delete("/funding-opportunities/{opportunity_id}/follow", response_model=FundingOpportunityRead)
+def unfollow_funding_opportunity(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return FundingService(db).unfollow(opportunity_id, current_user)

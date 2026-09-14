@@ -49,6 +49,15 @@ class FundingOpportunity(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Traceability for auto-collected entries (Phase 6 n8n pipeline) — per
+    # n8n/README.md's product rule: never present a collected opportunity
+    # as active without knowing when it was last confirmed accurate. Set
+    # at insert time for manually-seeded entries too, so the field always
+    # means something.
+    last_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

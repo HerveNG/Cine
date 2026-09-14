@@ -8,6 +8,7 @@ import type {
   DocumentType,
   FundingMatch,
   FundingOpportunity,
+  Notification,
   Project,
   ProjectStatus,
   ProjectType,
@@ -263,4 +264,27 @@ export const api = {
     }),
 
   getUsage: (token: string) => request<UsageSummary>("/subscription/usage", { token }),
+
+  followFundingOpportunity: (token: string, opportunityId: number) =>
+    request<FundingOpportunity>(`/funding-opportunities/${opportunityId}/follow`, {
+      method: "POST",
+      token,
+    }),
+
+  unfollowFundingOpportunity: (token: string, opportunityId: number) =>
+    request<FundingOpportunity>(`/funding-opportunities/${opportunityId}/follow`, {
+      method: "DELETE",
+      token,
+    }),
+
+  listNotifications: (token: string) => request<Notification[]>("/notifications", { token }),
+
+  markNotificationRead: (token: string, notificationId: number) =>
+    request<Notification>(`/notifications/${notificationId}/read`, {
+      method: "PUT",
+      token,
+    }),
+
+  markAllNotificationsRead: (token: string) =>
+    request<void>("/notifications/read-all", { method: "PUT", token }),
 };

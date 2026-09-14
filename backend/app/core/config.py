@@ -36,6 +36,10 @@ class Settings(BaseSettings):
 
     # --- Automation (n8n) ---
     N8N_WEBHOOK_URL: str = ""
+    # Shared secret n8n must send (header X-N8N-Secret) when calling
+    # POST /api/v1/integrations/n8n/funding-update. Empty = endpoint
+    # disabled (503) — never accept unauthenticated writes from outside.
+    N8N_WEBHOOK_SECRET: str = ""
 
     # --- Email (SMTP) ---
     SMTP_HOST: str = ""

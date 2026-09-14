@@ -29,6 +29,18 @@ export default function FundingMatchesPanel({
       .catch(() => setError("Impossible de charger les financements compatibles."));
   }, [token, projectId]);
 
+  async function toggleFollow(m: FundingMatch) {
+    if (!matches) return;
+    const updated = m.opportunity.is_followed
+      ? await api.unfollowFundingOpportunity(token, m.opportunity.id)
+      : await api.followFundingOpportunity(token, m.opportunity.id);
+    setMatches(
+      matches.map((match) =>
+        match.opportunity.id === updated.id ? { ...match, opportunity: updated } : match
+      )
+    );
+  }
+
   if (error) return <p className="text-sm text-danger">{error}</p>;
   if (!matches) return <p className="text-sm text-muted">Chargement…</p>;
   if (matches.length === 0) {
@@ -54,9 +66,21 @@ export default function FundingMatchesPanel({
               </a>
               <p className="text-sm text-muted">{m.opportunity.organization}</p>
             </div>
-            <span className="shrink-0 rounded-full border border-border-subtle px-2.5 py-1 text-xs font-medium text-gold-soft">
-              {m.score}/100
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                onClick={() => toggleFollow(m)}
+                className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+                  m.opportunity.is_followed
+                    ? "border-gold text-gold-soft"
+                    : "border-border-subtle text-muted hover:border-gold hover:text-gold-soft"
+                }`}
+              >
+                {m.opportunity.is_followed ? "✓ Suivi" : "Suivre"}
+              </button>
+              <span className="rounded-full border border-border-subtle px-2.5 py-1 text-xs font-medium text-gold-soft">
+                {m.score}/100
+              </span>
+            </div>
           </div>
 
           <p className="mt-2 text-sm text-foreground/80">{m.opportunity.description}</p>

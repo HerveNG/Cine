@@ -1,4 +1,4 @@
-# Known issues — Phase 1 (Foundation)
+# Known issues — Phases 1 à 6
 
 Ce document liste honnêtement les limites connues du MVP à ce stade, pour
 ne jamais laisser croire qu'une fonctionnalité est terminée alors qu'elle
@@ -96,9 +96,29 @@ ne l'est pas.
   d'ensemble (ex. tous les utilisateurs et leur consommation) — seul
   l'utilisateur voit son propre usage via `/abonnement`.
 
+## Automatisation (Phase 6) — limites connues
+
+- **Le workflow n8n est un modèle, pas une automatisation qui tourne** :
+  cet environnement de développement ne fait pas tourner n8n (pas de
+  Docker). `n8n/workflows/funding-watch.example.json` illustre la
+  structure (déclencheur planifié → récupération de page → détection de
+  changement → appel du webhook), mais la logique de détection de
+  changement par site officiel (`Vérifier le contenu`) est un
+  placeholder à écrire spécifiquement pour chaque fonds surveillé —
+  chaque page a sa propre structure. Ce qui est réellement construit et
+  testé, c'est le **côté FilmFund** de la chaîne : suivre un financement,
+  webhook authentifié (`POST /api/v1/integrations/n8n/funding-update`,
+  secret partagé requis), notification des suiveurs, `last_verified_at`.
+- **Un seul canal de notification** : en base, consultées dans
+  l'application (page `/notifications` + badge). Pas d'email ni de push.
+- **Pas de déduplication avancée** : chaque appel webhook crée une
+  nouvelle notification pour chaque suiveur, même si le changement est
+  mineur — c'est au workflow n8n (le "Vérifier le contenu" côté n8n) de
+  ne déclencher l'appel que sur un changement réel, pas au backend de
+  filtrer a posteriori.
+
 ## Fonctionnalités non implémentées (par design, cf. phasage du prompt maître)
 
-- n8n, veille automatisée, notifications — Phase 6.
 - Export PDF/DOCX/ZIP — non implémenté.
 - Administration (dashboard admin) — non implémenté ; seul un endpoint
   API admin-only existe (changement de plan, Phase 5), pas d'interface.

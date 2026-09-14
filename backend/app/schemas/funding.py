@@ -1,11 +1,9 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class FundingOpportunityRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
     organization: str
@@ -18,6 +16,8 @@ class FundingOpportunityRead(BaseModel):
     max_duration_minutes: int | None
     amount_label: str
     application_info: str
+    last_verified_at: datetime | None
+    is_followed: bool
     created_at: datetime
 
 

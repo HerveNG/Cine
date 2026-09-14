@@ -43,8 +43,11 @@ services:
     ports:
       - "3000:3000"
 
-  # n8n is scaffolded here for Phase 6 (automated funding watch, notifications).
-  # It is not wired to any workflow yet in this Phase 1 MVP.
+  # n8n is scaffolded here for Phase 6 (automated funding watch,
+  # notifications). The FilmFund side of the pipeline (follow, notify,
+  # webhook) is real and tested — see n8n/README.md. The workflow itself
+  # is a template (n8n/workflows/funding-watch.example.json) to import
+  # and adapt per fund, not a running automation out of the box.
   n8n:
     image: n8nio/n8n:latest
     restart: unless-stopped
@@ -53,6 +56,9 @@ services:
       N8N_BASIC_AUTH_ACTIVE: "true"
       N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
       N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:-changeme}
+      # Used by the example workflow to call the backend webhook.
+      FILMFUND_API_URL: ${FILMFUND_API_URL:-http://backend:8000}
+      FILMFUND_N8N_SECRET: ${N8N_WEBHOOK_SECRET:-}
     ports:
       - "5678:5678"
     volumes:

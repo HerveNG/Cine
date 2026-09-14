@@ -29,6 +29,14 @@ export default function FinancementsPage() {
       .catch(() => setError("Impossible de charger les financements."));
   }, [token, projectType, country, search]);
 
+  async function toggleFollow(opportunity: FundingOpportunity) {
+    if (!token || !opportunities) return;
+    const updated = opportunity.is_followed
+      ? await api.unfollowFundingOpportunity(token, opportunity.id)
+      : await api.followFundingOpportunity(token, opportunity.id);
+    setOpportunities(opportunities.map((o) => (o.id === updated.id ? updated : o)));
+  }
+
   return (
     <AppShell>
       <h1 className="font-display text-2xl">Financements</h1>
@@ -86,10 +94,26 @@ export default function FinancementsPage() {
                   </a>
                   <p className="text-sm text-muted">{o.organization}</p>
                 </div>
+                <button
+                  onClick={() => toggleFollow(o)}
+                  className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium ${
+                    o.is_followed
+                      ? "border-gold text-gold-soft"
+                      : "border-border-subtle text-muted hover:border-gold hover:text-gold-soft"
+                  }`}
+                >
+                  {o.is_followed ? "✓ Suivi" : "Suivre"}
+                </button>
               </div>
               <p className="mt-2 text-sm text-foreground/80">{o.description}</p>
               <p className="mt-2 text-sm text-muted">{o.amount_label}</p>
               <p className="mt-3 text-xs text-muted/70">{o.application_info}</p>
+              {o.last_verified_at && (
+                <p className="mt-1 text-xs text-muted/50">
+                  Dernière vérification :{" "}
+                  {new Date(o.last_verified_at).toLocaleDateString("fr-FR")}
+                </p>
+              )}
             </div>
           ))}
         </div>

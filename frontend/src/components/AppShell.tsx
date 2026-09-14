@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/lib/auth-context";
 
 const NAV_ITEMS = [
@@ -15,7 +16,7 @@ const NAV_ITEMS = [
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { user, isLoading, logout } = useAuth();
+  const { user, token, isLoading, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -84,6 +85,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <header className="flex h-16 items-center justify-between border-b border-border-subtle bg-surface px-6">
             <span className="font-display text-lg text-gold-soft md:hidden">FilmFund Africa</span>
             <div className="ml-auto flex items-center gap-4">
+              {token && <NotificationBell token={token} />}
               <span className="text-sm text-muted">
                 {user.prenom ? `Bienvenue, ${user.prenom}` : user.email}
               </span>
