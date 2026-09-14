@@ -57,6 +57,36 @@ export interface Project {
   updated_at: string;
 }
 
+export type DocumentType =
+  | "LOGLINE"
+  | "SYNOPSIS_SHORT"
+  | "SYNOPSIS_LONG"
+  | "NOTE_INTENTION"
+  | "TRAITEMENT"
+  | "PITCH";
+
+export interface AIDocument {
+  id: number;
+  project_id: number;
+  document_type: DocumentType;
+  version: number;
+  content: string;
+  instructions: string | null;
+  provider: string;
+  created_at: string;
+}
+
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  LOGLINE: "Logline",
+  SYNOPSIS_SHORT: "Synopsis court",
+  SYNOPSIS_LONG: "Synopsis long",
+  NOTE_INTENTION: "Note d'intention",
+  TRAITEMENT: "Traitement",
+  PITCH: "Pitch",
+};
+
+export const DOCUMENT_TYPES = Object.keys(DOCUMENT_TYPE_LABELS) as DocumentType[];
+
 export interface DashboardStats {
   projects_count: number;
   documents_generated: number;

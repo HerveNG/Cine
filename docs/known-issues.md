@@ -18,10 +18,26 @@ ne l'est pas.
   annoncer cette fonctionnalité comme disponible.
 - **OAuth Google** : prévu par le prompt maître, non implémenté en Phase 1.
 
+## AI Writer (Phase 2) — limites connues
+
+- **Pas de quota/crédits** : n'importe quel utilisateur authentifié peut
+  générer un nombre illimité de documents (chaque appel consomme de vraies
+  requêtes Anthropic, donc du budget réel). Le système de crédits IA est
+  prévu en Phase 5.
+- **Un seul provider réel branché** : `AnthropicProvider` (Claude). L'
+  abstraction (`app/services/ai/base.py`) permet d'ajouter un provider
+  OpenAI sans changer les endpoints, mais ce n'est pas fait.
+- **Pas de streaming** : la génération bloque la requête HTTP jusqu'à la
+  réponse complète du modèle (pas de affichage progressif côté frontend).
+- **Contenu généré non éditable manuellement** : l'utilisateur peut
+  régénérer/améliorer/raccourcir via l'IA, mais ne peut pas encore corriger
+  le texte à la main et sauvegarder cette correction comme nouvelle version.
+- **`AI_PROVIDER=none`** (valeur par défaut de `.env.example`) désactive
+  volontairement le module : les endpoints `/documents/*` renvoient alors
+  une erreur 503 explicite plutôt que de simuler une génération.
+
 ## Fonctionnalités non implémentées (par design, cf. phasage du prompt maître)
 
-- AI Writer (génération de logline, synopsis, notes, traitement, pitch…) —
-  Phase 2.
 - Funding Intelligence, recherche, matching, scoring — Phase 3.
 - Budget, plan de financement, calendrier — Phase 4.
 - Abonnements, crédits IA — Phase 5.

@@ -6,12 +6,13 @@ SaaS destiné aux auteurs, réalisateurs et producteurs africains — développe
 de projets audiovisuels, génération de documents assistée par IA, recherche
 et matching de financements, budgets et export de dossier.
 
-> **Statut : MVP — Phase 1 (Foundation) livrée.** Authentification, gestion
-> des utilisateurs, CRUD projets et tableau de bord sont réellement
-> fonctionnels et testés. Les autres modules du prompt maître (AI Writer,
-> Financements, Matching, Budget, Abonnements, n8n) ne sont **pas encore
-> implémentés** — voir [docs/known-issues.md](docs/known-issues.md) pour le
-> détail honnête de ce qui manque.
+> **Statut : MVP — Phases 1 et 2 livrées.** Authentification, gestion des
+> utilisateurs, CRUD projets, tableau de bord et AI Writer (génération de
+> documents par IA, versionnés) sont réellement fonctionnels et testés.
+> Les autres modules du prompt maître (Financements, Matching, Budget,
+> Abonnements, n8n) ne sont **pas encore implémentés** — voir
+> [docs/known-issues.md](docs/known-issues.md) pour le détail honnête de
+> ce qui manque.
 
 ## Stack
 
@@ -19,6 +20,9 @@ et matching de financements, budgets et export de dossier.
 - **Backend** : FastAPI (Python 3.11) + SQLAlchemy 2.0 + Alembic
 - **Base de données** : PostgreSQL 16 (compatible Supabase / Neon / local)
 - **Auth** : JWT (bcrypt pour le hash des mots de passe)
+- **IA (AI Writer)** : couche d'abstraction provider — Anthropic (Claude) en
+  production, ou un provider `local` déterministe sans appel réseau (défaut
+  hors-ligne et utilisé par les tests automatisés)
 - **Conteneurisation** : Docker / Docker Compose
 - **Automatisation (prévu)** : n8n
 
@@ -155,7 +159,7 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
 
 ---
 
-## Rapport de livraison — Phase 1 (Foundation)
+## Rapport de livraison — Phases 1 et 2
 
 ### FEATURES IMPLEMENTED
 
@@ -166,15 +170,29 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
 - CRUD Projets complet (create/list/get/update/delete) avec **isolation stricte
   par utilisateur** (testée : un utilisateur ne peut jamais lire/modifier/supprimer
   le projet d'un autre — 404, pas 403, pour ne pas révéler l'existence de l'ID)
-- Dashboard : statistiques réelles (nombre de projets) ; les compteurs des
-  modules non construits affichent honnêtement 0
+- **AI Writer (Phase 2)** : génération par IA de 6 types de documents par
+  projet (logline, synopsis court/long, note d'intention, traitement, pitch),
+  avec versioning complet (chaque génération/régénération/amélioration/
+  raccourcissement crée une nouvelle version, jamais d'écrasement) et
+  historique consultable. Couche d'abstraction `AIProvider` avec deux
+  implémentations : `anthropic` (appel réel à l'API Claude via
+  `AI_API_KEY`/`AI_MODEL`) et `local` (déterministe, sans réseau — utilisé
+  par les tests et comme option hors-ligne). Isolation utilisateur héritée
+  du CRUD projets (404 sur un document d'un projet qui n'est pas le sien).
+  Endpoints sous `/api/v1/projects/{project_id}/documents/*`.
+- Dashboard : statistiques réelles (nombre de projets, nombre de documents
+  générés) ; les compteurs des modules non construits (Financements)
+  affichent honnêtement 0
 - Frontend Next.js complet : landing page, inscription, connexion, dashboard,
-  liste/création/édition/suppression de projets, navigation avec modules
-  futurs clairement marqués "Bientôt"
+  liste/création/édition/suppression de projets, panneau "Assistant IA" par
+  projet (générer/régénérer/améliorer/raccourcir chaque document), navigation
+  avec modules futurs clairement marqués "Bientôt"
 - Design premium sobre et cinématographique (fond sombre, accents or)
 - Docker Compose (frontend + backend + postgres, n8n en option)
 - Seed de démonstration (2 utilisateurs, 3 projets)
-- 12 tests backend automatisés, exécutés contre une vraie base PostgreSQL
+- 17 tests backend automatisés, exécutés contre une vraie base PostgreSQL
+  (AI Writer forcé sur le provider `local` en tests — jamais d'appel réseau
+  ni de dépendance à une clé API dans la suite automatisée)
 - Build frontend (TypeScript strict + ESLint) sans erreur
 
 ### FEATURES PARTIALLY IMPLEMENTED
@@ -201,17 +219,18 @@ Voir `.env.example` (racine) et `frontend/.env.local.example`.
 Voir sections 3 et 4 ci-dessus (`docker compose up --build`, ou backend +
 frontend séparément).
 
-### NEXT STEPS (Phase 2 et suivantes, cf. prompt maître)
+### NEXT STEPS (Phase 3 et suivantes, cf. prompt maître)
 
-1. **Phase 2 — AI Writer** : couche d'abstraction `AIService`/`Provider`
-   (OpenAI/Anthropic/local), génération logline/synopsis/notes/traitement,
-   versioning des documents, éditeur avec régénérer/améliorer/raccourcir.
-2. **Phase 3 — Funding Intelligence** : tables `funding_opportunities`,
+1. **Phase 3 — Funding Intelligence** : tables `funding_opportunities`,
    recherche/filtres, matching projet↔financement avec score explicable.
-3. **Phase 4 — Budget & plan de financement** : catégories de budget,
+2. **Phase 4 — Budget & plan de financement** : catégories de budget,
    calcul automatique des sous-totaux, calendrier de production.
-4. **Phase 5 — Monétisation** : plans d'abonnement, crédits IA configurables.
-5. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
+3. **Phase 5 — Monétisation** : plans d'abonnement, crédits IA configurables
+   (l'AI Writer n'a aujourd'hui aucune limite de quota par utilisateur).
+4. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
    notifications.
-6. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
+5. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
    audit logs, OAuth Google.
+6. AI Writer : ajouter un provider OpenAI (l'abstraction le permet sans
+   changement d'API), streaming de la réponse IA, édition manuelle du
+   contenu généré avant sauvegarde.

@@ -44,11 +44,7 @@ export default function DashboardPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Mes projets" value={stats?.projects_count ?? 0} />
-        <StatCard
-          label="Documents générés"
-          value={stats?.documents_generated ?? 0}
-          note="Module AI Writer à venir"
-        />
+        <StatCard label="Documents générés" value={stats?.documents_generated ?? 0} />
         <StatCard
           label="Opportunités compatibles"
           value={stats?.compatible_opportunities ?? 0}

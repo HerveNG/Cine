@@ -1,6 +1,8 @@
 import type {
+  AIDocument,
   AuthResponse,
   DashboardStats,
+  DocumentType,
   Project,
   ProjectStatus,
   ProjectType,
@@ -128,4 +130,43 @@ export const api = {
     request<void>(`/projects/${id}`, { method: "DELETE", token }),
 
   dashboardStats: (token: string) => request<DashboardStats>("/dashboard/stats", { token }),
+
+  listDocuments: (token: string, projectId: number) =>
+    request<AIDocument[]>(`/projects/${projectId}/documents`, { token }),
+
+  listDocumentVersions: (token: string, projectId: number, documentType: DocumentType) =>
+    request<AIDocument[]>(`/projects/${projectId}/documents/${documentType}/versions`, {
+      token,
+    }),
+
+  generateDocument: (
+    token: string,
+    projectId: number,
+    documentType: DocumentType,
+    instructions?: string
+  ) =>
+    request<AIDocument>(`/projects/${projectId}/documents/generate`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ document_type: documentType, instructions }),
+    }),
+
+  regenerateDocument: (token: string, projectId: number, documentId: number) =>
+    request<AIDocument>(`/projects/${projectId}/documents/${documentId}/regenerate`, {
+      method: "POST",
+      token,
+    }),
+
+  improveDocument: (token: string, projectId: number, documentId: number, instruction: string) =>
+    request<AIDocument>(`/projects/${projectId}/documents/${documentId}/improve`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ instruction }),
+    }),
+
+  shortenDocument: (token: string, projectId: number, documentId: number) =>
+    request<AIDocument>(`/projects/${projectId}/documents/${documentId}/shorten`, {
+      method: "POST",
+      token,
+    }),
 };

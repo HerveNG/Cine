@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import AIWriterPanel from "@/components/AIWriterPanel";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
@@ -159,9 +160,15 @@ export default function ProjectDetailPage() {
         </button>
       </div>
 
-      <div className="mt-10 rounded-xl border border-dashed border-border-subtle p-6 text-sm text-muted">
-        L&apos;AI Writer (génération de synopsis, note d&apos;intention, note de réalisation…)
-        n&apos;est pas encore implémenté dans ce MVP — voir la feuille de route (Phase 2).
+      <div className="mt-10">
+        <h2 className="font-display text-xl">Assistant IA</h2>
+        <p className="mt-1 text-sm text-muted">
+          Génère, régénère, améliore ou raccourcis les documents de développement de ce
+          projet.
+        </p>
+        <div className="mt-4">
+          {token && <AIWriterPanel token={token} projectId={project.id} />}
+        </div>
       </div>
     </AppShell>
   );

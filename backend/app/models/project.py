@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.models.document import Document
     from app.models.user import User
 
 
@@ -68,3 +69,6 @@ class Project(Base):
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="projects")
+    documents: Mapped[list["Document"]] = relationship(
+        "Document", back_populates="project", cascade="all, delete-orphan"
+    )

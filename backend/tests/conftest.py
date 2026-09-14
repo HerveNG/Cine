@@ -1,3 +1,11 @@
+import os
+
+# Force the deterministic, network-free AI provider for the whole test
+# suite — tests must never depend on a live Anthropic API key or a real
+# network call (see app/services/ai/local_provider.py). Must be set
+# before app.core.config.settings is first imported (below).
+os.environ["AI_PROVIDER"] = "local"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
