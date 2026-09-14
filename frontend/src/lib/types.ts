@@ -87,6 +87,30 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
 
 export const DOCUMENT_TYPES = Object.keys(DOCUMENT_TYPE_LABELS) as DocumentType[];
 
+export interface FundingOpportunity {
+  id: number;
+  name: string;
+  organization: string;
+  description: string;
+  url: string;
+  eligible_project_types: string[];
+  eligible_countries: string[];
+  eligible_stages: string[];
+  min_duration_minutes: number | null;
+  max_duration_minutes: number | null;
+  amount_label: string;
+  application_info: string;
+  created_at: string;
+}
+
+export interface FundingMatch {
+  opportunity: FundingOpportunity;
+  score: number;
+  project_type_match: boolean;
+  country_match: boolean;
+  stage_match: boolean;
+}
+
 export interface DashboardStats {
   projects_count: number;
   documents_generated: number;

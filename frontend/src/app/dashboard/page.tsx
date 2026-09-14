@@ -5,8 +5,15 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import type { DashboardStats, Project } from "@/lib/types";
+import type { DashboardStats, FundingMatch, Project } from "@/lib/types";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/types";
+
+const COMPATIBLE_SCORE_THRESHOLD = 60;
+
+interface TopMatch {
+  match: FundingMatch;
+  project: Project;
+}
 
 function StatCard({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
@@ -22,17 +29,36 @@ export default function DashboardPage() {
   const { user, token } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [topMatches, setTopMatches] = useState<TopMatch[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
     Promise.all([api.dashboardStats(token), api.listProjects(token)])
-      .then(([s, p]) => {
+      .then(async ([s, allProjects]) => {
         setStats(s);
-        setProjects(p.slice(0, 4));
+        setProjects(allProjects);
+
+        const matchesByProject = await Promise.all(
+          allProjects.map((project) =>
+            api
+              .getFundingMatches(token, project.id)
+              .then((matches) => ({ project, matches }))
+              .catch(() => ({ project, matches: [] as FundingMatch[] }))
+          )
+        );
+        const flattened = matchesByProject.flatMap(({ project, matches }) =>
+          matches
+            .filter((m) => m.score >= COMPATIBLE_SCORE_THRESHOLD)
+            .map((match) => ({ match, project }))
+        );
+        flattened.sort((a, b) => b.match.score - a.match.score);
+        setTopMatches(flattened.slice(0, 4));
       })
       .catch(() => setError("Impossible de charger le tableau de bord."));
   }, [token]);
+
+  const visibleProjects = projects.slice(0, 4);
 
   return (
     <AppShell>
@@ -48,12 +74,11 @@ export default function DashboardPage() {
         <StatCard
           label="Opportunités compatibles"
           value={stats?.compatible_opportunities ?? 0}
-          note="Module Financements à venir"
         />
         <StatCard
           label="Échéances prochaines"
           value={stats?.upcoming_deadlines ?? 0}
-          note="Module Financements à venir"
+          note="Suivi des dates limites à venir"
         />
       </div>
 
@@ -67,7 +92,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {projects.length === 0 ? (
+      {visibleProjects.length === 0 ? (
         <p className="mt-4 text-sm text-muted">
           Aucun projet pour l&apos;instant.{" "}
           <Link href="/projects/new" className="text-gold-soft hover:underline">
@@ -77,7 +102,7 @@ export default function DashboardPage() {
         </p>
       ) : (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {projects.map((project) => (
+          {visibleProjects.map((project) => (
             <Link
               key={project.id}
               href={`/projects/${project.id}`}
@@ -94,11 +119,44 @@ export default function DashboardPage() {
       )}
 
       <div className="mt-10">
-        <h2 className="font-display text-xl">Opportunités recommandées</h2>
-        <p className="mt-4 rounded-xl border border-dashed border-border-subtle p-6 text-sm text-muted">
-          Le module Funding Intelligence &amp; Matching n&apos;est pas encore implémenté dans ce
-          MVP (Phase 3 de la feuille de route). Aucune opportunité fictive n&apos;est affichée ici.
-        </p>
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-xl">Opportunités recommandées</h2>
+          <Link href="/financements" className="text-sm text-gold-soft hover:underline">
+            Voir tous les financements
+          </Link>
+        </div>
+
+        {!topMatches ? (
+          <p className="mt-4 text-sm text-muted">Chargement…</p>
+        ) : topMatches.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-dashed border-border-subtle p-6 text-sm text-muted">
+            Aucune opportunité fortement compatible pour l&apos;instant (score ≥{" "}
+            {COMPATIBLE_SCORE_THRESHOLD}/100). Complétez le pays et l&apos;étape de vos projets
+            pour affiner le matching, ou consultez tous les financements.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {topMatches.map(({ match, project }) => (
+              <Link
+                key={`${project.id}-${match.opportunity.id}`}
+                href={`/projects/${project.id}`}
+                className="block rounded-xl border border-border-subtle bg-surface p-5 transition-colors hover:border-gold"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-display text-lg">{match.opportunity.name}</p>
+                    <p className="text-sm text-muted">
+                      Pour « {project.title} » · {match.opportunity.amount_label}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-border-subtle px-2.5 py-1 text-xs font-medium text-gold-soft">
+                    {match.score}/100
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </AppShell>
   );

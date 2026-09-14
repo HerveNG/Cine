@@ -3,6 +3,8 @@ import type {
   AuthResponse,
   DashboardStats,
   DocumentType,
+  FundingMatch,
+  FundingOpportunity,
   Project,
   ProjectStatus,
   ProjectType,
@@ -169,4 +171,22 @@ export const api = {
       method: "POST",
       token,
     }),
+
+  listFundingOpportunities: (
+    token: string,
+    filters: { project_type?: string; country?: string; search?: string } = {}
+  ) => {
+    const params = new URLSearchParams();
+    if (filters.project_type) params.set("project_type", filters.project_type);
+    if (filters.country) params.set("country", filters.country);
+    if (filters.search) params.set("search", filters.search);
+    const query = params.toString();
+    return request<FundingOpportunity[]>(
+      `/funding-opportunities${query ? `?${query}` : ""}`,
+      { token }
+    );
+  },
+
+  getFundingMatches: (token: string, projectId: number) =>
+    request<FundingMatch[]>(`/projects/${projectId}/funding-matches`, { token }),
 };

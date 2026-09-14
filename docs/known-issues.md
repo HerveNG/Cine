@@ -36,9 +36,35 @@ ne l'est pas.
   volontairement le module : les endpoints `/documents/*` renvoient alors
   une erreur 503 explicite plutôt que de simuler une génération.
 
+## Funding Intelligence (Phase 3) — limites connues
+
+- **Liste non exhaustive** : 7 financements réels et vérifiés au moment de
+  leur ajout (voir `backend/scripts/seed_funding_opportunities.py` pour les
+  sources). Ce n'est qu'un point de départ, pas un panorama complet des
+  financements disponibles pour le cinéma africain.
+- **Pas de dates limites précises stockées** : les deadlines réelles
+  changent chaque année et ne sont pas fiables d'une session à l'autre.
+  Chaque financement a un champ `application_info` en texte libre
+  renvoyant vers le site officiel plutôt qu'une date fixe qu'on ne peut
+  pas garantir exacte. Le compteur dashboard `upcoming_deadlines` reste
+  donc honnêtement à 0.
+- **Éligibilité géographique simplifiée** : `eligible_countries` vide
+  signifie "pas de restriction connue", utilisé pour les grands fonds
+  internationaux (Hubert Bals, IDFA Bertha, World Cinema Fund, Sørfond)
+  qui couvrent des dizaines de pays qu'il ne serait pas raisonnable de
+  lister à la main. Une correspondance pays n'est donc garantie que pour
+  les fonds à éligibilité strictement définie (ex. AFAC, Durban FilmMart).
+- **Score de matching indicatif** : basé sur 3 critères simples (type de
+  projet, pays, étape) pondérés arbitrairement (40/35/25) — c'est un
+  filtre d'aide à la décision explicable, pas une garantie d'éligibilité
+  réelle ; toujours vérifier les critères complets sur le site officiel
+  avant de candidater.
+- **Pas d'administration** : les financements sont gérés uniquement via
+  le script de seed (aucune interface pour en ajouter/modifier depuis
+  l'application).
+
 ## Fonctionnalités non implémentées (par design, cf. phasage du prompt maître)
 
-- Funding Intelligence, recherche, matching, scoring — Phase 3.
 - Budget, plan de financement, calendrier — Phase 4.
 - Abonnements, crédits IA — Phase 5.
 - n8n, veille automatisée, notifications — Phase 6.

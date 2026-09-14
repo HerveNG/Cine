@@ -1,11 +1,9 @@
 """Seed the database with demo data for local testing / pilot users.
 
-Per project policy (section 37 of the master prompt), NO fictional funding
-opportunities exist yet in this Phase 1 codebase — the Funding module isn't
-built. So this seed only creates demo USERS and PROJECTS, which are real
-usable accounts/data, not simulated market data. When the Funding module
-is added, any fictional opportunity seeded here MUST be clearly marked
-"DEMO DATA — NOT REAL" per that same policy.
+This seed creates demo USERS and PROJECTS — real usable accounts/data, not
+simulated market data. Funding opportunities (Phase 3) are seeded
+separately by scripts/seed_funding_opportunities.py, since those are real
+curated funds rather than demo data tied to the demo accounts here.
 
 Run with:
     cd backend && source .venv/bin/activate && python scripts/seed.py

@@ -8,8 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", ready: true },
   { href: "/projects", label: "Mes projets", ready: true },
-  { href: "/ai-writer", label: "AI Writer", ready: false },
-  { href: "/financements", label: "Financements", ready: false },
+  { href: "/financements", label: "Financements", ready: true },
   { href: "/budget", label: "Budget", ready: false },
   { href: "/calendrier", label: "Calendrier", ready: false },
   { href: "/documents", label: "Documents", ready: false },

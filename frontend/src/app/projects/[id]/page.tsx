@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AIWriterPanel from "@/components/AIWriterPanel";
 import AppShell from "@/components/AppShell";
+import FundingMatchesPanel from "@/components/FundingMatchesPanel";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { Project, ProjectStatus } from "@/lib/types";
@@ -168,6 +169,16 @@ export default function ProjectDetailPage() {
         </p>
         <div className="mt-4">
           {token && <AIWriterPanel token={token} projectId={project.id} />}
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="font-display text-xl">Financements compatibles</h2>
+        <p className="mt-1 text-sm text-muted">
+          Score calculé sur le type de projet, le pays et l&apos;étape de développement.
+        </p>
+        <div className="mt-4">
+          {token && <FundingMatchesPanel token={token} projectId={project.id} />}
         </div>
       </div>
     </AppShell>
