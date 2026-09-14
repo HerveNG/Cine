@@ -20,17 +20,17 @@ const PLAN_FEATURES: Record<SubscriptionPlan, string[]> = {
 const PLANS: SubscriptionPlan[] = ["FREE", "PRO", "STUDIO"];
 
 export default function AbonnementPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!user) return;
     api
-      .getUsage(token)
+      .getUsage()
       .then(setUsage)
       .catch(() => setError("Impossible de charger votre abonnement."));
-  }, [token]);
+  }, [user]);
 
   return (
     <AppShell>

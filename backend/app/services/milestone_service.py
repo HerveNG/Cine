@@ -38,6 +38,15 @@ class MilestoneService:
         milestone = self._get_or_404(project.id, milestone_id)
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(milestone, field, value)
+        # MilestoneUpdate's own validator only catches start/end date
+        # inversions when both are supplied in the same request — a
+        # partial update touching only one of the two needs the merged
+        # result checked here, against the value already in the DB.
+        if milestone.end_date is not None and milestone.end_date < milestone.start_date:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="La date de fin ne peut pas précéder la date de début.",
+            )
         return self.milestones.update(milestone)
 
     def delete_milestone(self, project_id: int, milestone_id: int, current_user: User) -> None:

@@ -27,16 +27,17 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit & { token?: string | null } = {}
-): Promise<T> {
-  const { token, headers, ...rest } = options;
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const { headers, ...rest } = options;
   const res = await fetch(`${API_URL}${path}`, {
     ...rest,
+    // Sends and accepts the httpOnly access_token cookie — the only way
+    // this app authenticates. The token itself never touches frontend
+    // JS (no Authorization header, no localStorage) — see
+    // lib/auth-context.tsx.
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
   });
@@ -82,36 +83,33 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  me: (token: string) => request<User>("/auth/me", { token }),
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
 
-  listProjects: (token: string) => request<Project[]>("/projects", { token }),
+  me: () => request<User>("/auth/me"),
 
-  getProject: (token: string, id: number) => request<Project>(`/projects/${id}`, { token }),
+  listProjects: () => request<Project[]>("/projects"),
 
-  createProject: (
-    token: string,
-    payload: {
-      title: string;
-      project_type: ProjectType;
-      genre?: string;
-      country?: string;
-      language?: string;
-      duration_minutes?: number;
-      logline?: string;
-      short_synopsis?: string;
-      long_synopsis?: string;
-      theme?: string;
-      target_audience?: string;
-    }
-  ) =>
+  getProject: (id: number) => request<Project>(`/projects/${id}`),
+
+  createProject: (payload: {
+    title: string;
+    project_type: ProjectType;
+    genre?: string;
+    country?: string;
+    language?: string;
+    duration_minutes?: number;
+    logline?: string;
+    short_synopsis?: string;
+    long_synopsis?: string;
+    theme?: string;
+    target_audience?: string;
+  }) =>
     request<Project>("/projects", {
       method: "POST",
-      token,
       body: JSON.stringify(payload),
     }),
 
   updateProject: (
-    token: string,
     id: number,
     payload: Partial<{
       title: string;
@@ -131,56 +129,41 @@ export const api = {
   ) =>
     request<Project>(`/projects/${id}`, {
       method: "PUT",
-      token,
       body: JSON.stringify(payload),
     }),
 
-  deleteProject: (token: string, id: number) =>
-    request<void>(`/projects/${id}`, { method: "DELETE", token }),
+  deleteProject: (id: number) => request<void>(`/projects/${id}`, { method: "DELETE" }),
 
-  dashboardStats: (token: string) => request<DashboardStats>("/dashboard/stats", { token }),
+  dashboardStats: () => request<DashboardStats>("/dashboard/stats"),
 
-  listDocuments: (token: string, projectId: number) =>
-    request<AIDocument[]>(`/projects/${projectId}/documents`, { token }),
+  listDocuments: (projectId: number) => request<AIDocument[]>(`/projects/${projectId}/documents`),
 
-  listDocumentVersions: (token: string, projectId: number, documentType: DocumentType) =>
-    request<AIDocument[]>(`/projects/${projectId}/documents/${documentType}/versions`, {
-      token,
-    }),
+  listDocumentVersions: (projectId: number, documentType: DocumentType) =>
+    request<AIDocument[]>(`/projects/${projectId}/documents/${documentType}/versions`),
 
-  generateDocument: (
-    token: string,
-    projectId: number,
-    documentType: DocumentType,
-    instructions?: string
-  ) =>
+  generateDocument: (projectId: number, documentType: DocumentType, instructions?: string) =>
     request<AIDocument>(`/projects/${projectId}/documents/generate`, {
       method: "POST",
-      token,
       body: JSON.stringify({ document_type: documentType, instructions }),
     }),
 
-  regenerateDocument: (token: string, projectId: number, documentId: number) =>
+  regenerateDocument: (projectId: number, documentId: number) =>
     request<AIDocument>(`/projects/${projectId}/documents/${documentId}/regenerate`, {
       method: "POST",
-      token,
     }),
 
-  improveDocument: (token: string, projectId: number, documentId: number, instruction: string) =>
+  improveDocument: (projectId: number, documentId: number, instruction: string) =>
     request<AIDocument>(`/projects/${projectId}/documents/${documentId}/improve`, {
       method: "POST",
-      token,
       body: JSON.stringify({ instruction }),
     }),
 
-  shortenDocument: (token: string, projectId: number, documentId: number) =>
+  shortenDocument: (projectId: number, documentId: number) =>
     request<AIDocument>(`/projects/${projectId}/documents/${documentId}/shorten`, {
       method: "POST",
-      token,
     }),
 
   listFundingOpportunities: (
-    token: string,
     filters: { project_type?: string; country?: string; search?: string } = {}
   ) => {
     const params = new URLSearchParams();
@@ -188,103 +171,79 @@ export const api = {
     if (filters.country) params.set("country", filters.country);
     if (filters.search) params.set("search", filters.search);
     const query = params.toString();
-    return request<FundingOpportunity[]>(
-      `/funding-opportunities${query ? `?${query}` : ""}`,
-      { token }
-    );
+    return request<FundingOpportunity[]>(`/funding-opportunities${query ? `?${query}` : ""}`);
   },
 
-  getFundingMatches: (token: string, projectId: number) =>
-    request<FundingMatch[]>(`/projects/${projectId}/funding-matches`, { token }),
+  getFundingMatches: (projectId: number) =>
+    request<FundingMatch[]>(`/projects/${projectId}/funding-matches`),
 
-  getBudget: (token: string, projectId: number) =>
-    request<BudgetSummary>(`/projects/${projectId}/budget`, { token }),
+  getBudget: (projectId: number) => request<BudgetSummary>(`/projects/${projectId}/budget`),
 
-  createBudgetCategory: (token: string, projectId: number, name: string) =>
+  createBudgetCategory: (projectId: number, name: string) =>
     request<BudgetCategory>(`/projects/${projectId}/budget/categories`, {
       method: "POST",
-      token,
       body: JSON.stringify({ name }),
     }),
 
-  deleteBudgetCategory: (token: string, projectId: number, categoryId: number) =>
+  deleteBudgetCategory: (projectId: number, categoryId: number) =>
     request<void>(`/projects/${projectId}/budget/categories/${categoryId}`, {
       method: "DELETE",
-      token,
     }),
 
   createBudgetLineItem: (
-    token: string,
     projectId: number,
     categoryId: number,
     payload: { label: string; quantity: string; unit_cost: string; notes?: string }
   ) =>
     request<BudgetLineItem>(`/projects/${projectId}/budget/categories/${categoryId}/items`, {
       method: "POST",
-      token,
       body: JSON.stringify(payload),
     }),
 
   updateBudgetLineItem: (
-    token: string,
     projectId: number,
     itemId: number,
     payload: Partial<{ label: string; quantity: string; unit_cost: string; notes: string }>
   ) =>
     request<BudgetLineItem>(`/projects/${projectId}/budget/items/${itemId}`, {
       method: "PUT",
-      token,
       body: JSON.stringify(payload),
     }),
 
-  deleteBudgetLineItem: (token: string, projectId: number, itemId: number) =>
-    request<void>(`/projects/${projectId}/budget/items/${itemId}`, {
-      method: "DELETE",
-      token,
-    }),
+  deleteBudgetLineItem: (projectId: number, itemId: number) =>
+    request<void>(`/projects/${projectId}/budget/items/${itemId}`, { method: "DELETE" }),
 
-  listMilestones: (token: string, projectId: number) =>
-    request<ProductionMilestone[]>(`/projects/${projectId}/milestones`, { token }),
+  listMilestones: (projectId: number) =>
+    request<ProductionMilestone[]>(`/projects/${projectId}/milestones`),
 
   createMilestone: (
-    token: string,
     projectId: number,
     payload: { title: string; start_date: string; end_date?: string; notes?: string }
   ) =>
     request<ProductionMilestone>(`/projects/${projectId}/milestones`, {
       method: "POST",
-      token,
       body: JSON.stringify(payload),
     }),
 
-  deleteMilestone: (token: string, projectId: number, milestoneId: number) =>
-    request<void>(`/projects/${projectId}/milestones/${milestoneId}`, {
-      method: "DELETE",
-      token,
-    }),
+  deleteMilestone: (projectId: number, milestoneId: number) =>
+    request<void>(`/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" }),
 
-  getUsage: (token: string) => request<UsageSummary>("/subscription/usage", { token }),
+  getUsage: () => request<UsageSummary>("/subscription/usage"),
 
-  followFundingOpportunity: (token: string, opportunityId: number) =>
+  followFundingOpportunity: (opportunityId: number) =>
     request<FundingOpportunity>(`/funding-opportunities/${opportunityId}/follow`, {
       method: "POST",
-      token,
     }),
 
-  unfollowFundingOpportunity: (token: string, opportunityId: number) =>
+  unfollowFundingOpportunity: (opportunityId: number) =>
     request<FundingOpportunity>(`/funding-opportunities/${opportunityId}/follow`, {
       method: "DELETE",
-      token,
     }),
 
-  listNotifications: (token: string) => request<Notification[]>("/notifications", { token }),
+  listNotifications: () => request<Notification[]>("/notifications"),
 
-  markNotificationRead: (token: string, notificationId: number) =>
-    request<Notification>(`/notifications/${notificationId}/read`, {
-      method: "PUT",
-      token,
-    }),
+  markNotificationRead: (notificationId: number) =>
+    request<Notification>(`/notifications/${notificationId}/read`, { method: "PUT" }),
 
-  markAllNotificationsRead: (token: string) =>
-    request<void>("/notifications/read-all", { method: "PUT", token }),
+  markAllNotificationsRead: () => request<void>("/notifications/read-all", { method: "PUT" }),
 };

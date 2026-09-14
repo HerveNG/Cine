@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-export default function NotificationBell({ token }: { token: string }) {
+export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     api
-      .listNotifications(token)
+      .listNotifications()
       .then((notifications) => setUnreadCount(notifications.filter((n) => !n.is_read).length))
       .catch(() => {});
-  }, [token]);
+  }, []);
 
   return (
     <Link

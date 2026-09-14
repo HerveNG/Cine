@@ -1,11 +1,50 @@
 from tests.conftest import auth_headers, register_user
 
 
-def test_register_creates_user_and_returns_token(client):
+def test_register_creates_user_and_sets_httponly_cookie(client):
     data = register_user(client, "test.register@example.com")
     assert data["user"]["email"] == "test.register@example.com"
-    assert data["access_token"]
-    assert data["token_type"] == "bearer"
+    assert data["access_token"]  # pulled from the cookie by the test helper
+
+    resp = client.post(
+        "/api/v1/auth/register", json={"email": "cookie-shape@example.com", "password": "SuperSecret123"}
+    )
+    assert "access_token" not in resp.json()  # never in the body
+    set_cookie_header = resp.headers.get("set-cookie", "").lower()
+    assert "access_token=" in set_cookie_header
+    assert "httponly" in set_cookie_header
+    assert "samesite=lax" in set_cookie_header
+
+
+def test_logout_clears_cookie(client):
+    register_user(client, "logout@example.com")
+    assert client.cookies.get("access_token")
+
+    resp = client.post("/api/v1/auth/logout")
+    assert resp.status_code == 204
+
+    resp = client.get("/api/v1/auth/me")
+    assert resp.status_code == 401
+
+
+def test_register_rejects_self_assigned_admin_role(client):
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "wannabe-admin@example.com",
+            "password": "SuperSecret123",
+            "user_type": "ADMIN",
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_register_rejects_short_password(client):
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={"email": "shortpass@example.com", "password": "short1"},
+    )
+    assert resp.status_code == 422
 
 
 def test_register_duplicate_email_rejected(client):
@@ -24,7 +63,8 @@ def test_login_success(client):
         json={"email": "login@example.com", "password": "MyPassw0rd!"},
     )
     assert resp.status_code == 200
-    assert resp.json()["access_token"]
+    assert resp.json()["user"]["email"] == "login@example.com"
+    assert resp.cookies.get("access_token")
 
 
 def test_login_wrong_password_rejected(client):

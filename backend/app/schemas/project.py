@@ -1,17 +1,17 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.project import ProjectStatus, ProjectType
 
 
 class ProjectBase(BaseModel):
-    title: str
+    title: str = Field(min_length=1)
     project_type: ProjectType
     genre: str | None = None
     country: str | None = None
     language: str | None = None
-    duration_minutes: int | None = None
+    duration_minutes: int | None = Field(default=None, ge=0)
     logline: str | None = None
     short_synopsis: str | None = None
     long_synopsis: str | None = None
@@ -25,12 +25,12 @@ class ProjectCreate(ProjectBase):
 
 
 class ProjectUpdate(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, min_length=1)
     project_type: ProjectType | None = None
     genre: str | None = None
     country: str | None = None
     language: str | None = None
-    duration_minutes: int | None = None
+    duration_minutes: int | None = Field(default=None, ge=0)
     logline: str | None = None
     short_synopsis: str | None = None
     long_synopsis: str | None = None

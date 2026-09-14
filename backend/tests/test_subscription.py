@@ -109,9 +109,18 @@ def test_failed_generation_does_not_consume_a_credit(client, monkeypatch):
     assert resp.json()["credits_used"] == 0
 
 
-def test_admin_endpoint_requires_admin_role(client):
+def test_admin_endpoint_requires_admin_role(client, db_session):
+    # Registering directly as ADMIN via the API is deliberately rejected
+    # (see test_auth.py::test_register_rejects_self_assigned_admin_role) —
+    # admin accounts are only ever promoted out-of-band, so the test does
+    # the same thing scripts/seed.py does: flip the role directly in the DB.
+    from app.models.user import User, UserType
+
     token_user = _register_and_get_token(client, "plain@example.com")
-    token_admin = _register_and_get_token(client, "admin@example.com", user_type="ADMIN")
+    token_admin = _register_and_get_token(client, "admin@example.com")
+    admin_row = db_session.query(User).filter(User.email == "admin@example.com").one()
+    admin_row.user_type = UserType.ADMIN
+    db_session.commit()
 
     user_data = client.get("/api/v1/auth/me", headers=auth_headers(token_user)).json()
 

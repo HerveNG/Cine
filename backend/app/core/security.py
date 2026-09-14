@@ -6,12 +6,15 @@ can change without touching business logic.
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from fastapi import Response
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+ACCESS_TOKEN_COOKIE_NAME = "access_token"
 
 
 def hash_password(password: str) -> str:
@@ -37,3 +40,27 @@ def decode_access_token(token: str) -> str | None:
         return payload.get("sub")
     except JWTError:
         return None
+
+
+def set_access_token_cookie(response: Response, token: str) -> None:
+    """The token never travels in a JSON response body — only via this
+    httpOnly cookie, so frontend JS can never read it (mitigates XSS token
+    theft). SameSite=Lax is enough CSRF protection for a JSON API called
+    via fetch (browsers don't attach Lax cookies to cross-site fetch/XHR,
+    only to top-level navigations) without needing a separate CSRF token.
+    `secure` is only enforced outside local dev, where the frontend talks
+    to the backend over plain http://localhost.
+    """
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE_NAME,
+        value=token,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax",
+        path="/",
+    )
+
+
+def clear_access_token_cookie(response: Response) -> None:
+    response.delete_cookie(key=ACCESS_TOKEN_COOKIE_NAME, path="/")

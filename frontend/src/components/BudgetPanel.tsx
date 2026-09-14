@@ -9,13 +9,11 @@ function formatAmount(value: string, currency: string | null) {
 }
 
 function CategoryCard({
-  token,
   projectId,
   category,
   currency,
   onChanged,
 }: {
-  token: string;
   projectId: number;
   category: BudgetCategory;
   currency: string | null;
@@ -32,7 +30,7 @@ function CategoryCard({
     setSaving(true);
     setError(null);
     try {
-      await api.createBudgetLineItem(token, projectId, category.id, {
+      await api.createBudgetLineItem(projectId, category.id, {
         label,
         quantity,
         unit_cost: unitCost,
@@ -49,13 +47,13 @@ function CategoryCard({
   }
 
   async function deleteItem(itemId: number) {
-    await api.deleteBudgetLineItem(token, projectId, itemId);
+    await api.deleteBudgetLineItem(projectId, itemId);
     onChanged();
   }
 
   async function deleteCategory() {
     if (!window.confirm(`Supprimer la catégorie « ${category.name} » et ses lignes ?`)) return;
-    await api.deleteBudgetCategory(token, projectId, category.id);
+    await api.deleteBudgetCategory(projectId, category.id);
     onChanged();
   }
 
@@ -140,23 +138,23 @@ function CategoryCard({
   );
 }
 
-export default function BudgetPanel({ token, projectId }: { token: string; projectId: number }) {
+export default function BudgetPanel({ projectId }: { projectId: number }) {
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
 
   function reload() {
     api
-      .getBudget(token, projectId)
+      .getBudget(projectId)
       .then(setSummary)
       .catch(() => setError("Impossible de charger le budget."));
   }
 
-  useEffect(reload, [token, projectId]);
+  useEffect(reload, [projectId]);
 
   async function addCategory() {
     if (!newCategoryName.trim()) return;
-    await api.createBudgetCategory(token, projectId, newCategoryName);
+    await api.createBudgetCategory(projectId, newCategoryName);
     setNewCategoryName("");
     reload();
   }
@@ -176,7 +174,6 @@ export default function BudgetPanel({ token, projectId }: { token: string; proje
       {summary.categories.map((category) => (
         <CategoryCard
           key={category.id}
-          token={token}
           projectId={projectId}
           category={category}
           currency={summary.currency}

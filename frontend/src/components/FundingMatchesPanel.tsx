@@ -12,28 +12,22 @@ function CriterionBadge({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-export default function FundingMatchesPanel({
-  token,
-  projectId,
-}: {
-  token: string;
-  projectId: number;
-}) {
+export default function FundingMatchesPanel({ projectId }: { projectId: number }) {
   const [matches, setMatches] = useState<FundingMatch[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .getFundingMatches(token, projectId)
+      .getFundingMatches(projectId)
       .then(setMatches)
       .catch(() => setError("Impossible de charger les financements compatibles."));
-  }, [token, projectId]);
+  }, [projectId]);
 
   async function toggleFollow(m: FundingMatch) {
     if (!matches) return;
     const updated = m.opportunity.is_followed
-      ? await api.unfollowFundingOpportunity(token, m.opportunity.id)
-      : await api.followFundingOpportunity(token, m.opportunity.id);
+      ? await api.unfollowFundingOpportunity(m.opportunity.id)
+      : await api.followFundingOpportunity(m.opportunity.id);
     setMatches(
       matches.map((match) =>
         match.opportunity.id === updated.id ? { ...match, opportunity: updated } : match

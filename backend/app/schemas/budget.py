@@ -1,20 +1,20 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BudgetLineItemCreate(BaseModel):
-    label: str
-    quantity: Decimal = Decimal("1")
-    unit_cost: Decimal
+    label: str = Field(min_length=1)
+    quantity: Decimal = Field(default=Decimal("1"), ge=0)
+    unit_cost: Decimal = Field(ge=0)
     notes: str | None = None
 
 
 class BudgetLineItemUpdate(BaseModel):
-    label: str | None = None
-    quantity: Decimal | None = None
-    unit_cost: Decimal | None = None
+    label: str | None = Field(default=None, min_length=1)
+    quantity: Decimal | None = Field(default=None, ge=0)
+    unit_cost: Decimal | None = Field(default=None, ge=0)
     notes: str | None = None
 
 
@@ -32,11 +32,11 @@ class BudgetLineItemRead(BaseModel):
 
 
 class BudgetCategoryCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
 
 
 class BudgetCategoryUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1)
 
 
 class BudgetCategoryRead(BaseModel):

@@ -10,7 +10,7 @@ import { PROJECT_TYPE_LABELS } from "@/lib/types";
 const PROJECT_TYPES = Object.keys(PROJECT_TYPE_LABELS) as ProjectType[];
 
 export default function FinancementsPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [opportunities, setOpportunities] = useState<FundingOpportunity[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [projectType, setProjectType] = useState("");
@@ -18,22 +18,22 @@ export default function FinancementsPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!user) return;
     api
-      .listFundingOpportunities(token, {
+      .listFundingOpportunities({
         project_type: projectType || undefined,
         country: country || undefined,
         search: search || undefined,
       })
       .then(setOpportunities)
       .catch(() => setError("Impossible de charger les financements."));
-  }, [token, projectType, country, search]);
+  }, [user, projectType, country, search]);
 
   async function toggleFollow(opportunity: FundingOpportunity) {
-    if (!token || !opportunities) return;
+    if (!opportunities) return;
     const updated = opportunity.is_followed
-      ? await api.unfollowFundingOpportunity(token, opportunity.id)
-      : await api.followFundingOpportunity(token, opportunity.id);
+      ? await api.unfollowFundingOpportunity(opportunity.id)
+      : await api.followFundingOpportunity(opportunity.id);
     setOpportunities(opportunities.map((o) => (o.id === updated.id ? updated : o)));
   }
 

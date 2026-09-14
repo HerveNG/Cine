@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import AppShell from "@/components/AppShell";
-import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { ProjectType } from "@/lib/types";
 import { PROJECT_TYPE_LABELS } from "@/lib/types";
@@ -11,7 +10,6 @@ import { PROJECT_TYPE_LABELS } from "@/lib/types";
 const PROJECT_TYPES = Object.keys(PROJECT_TYPE_LABELS) as ProjectType[];
 
 export default function NewProjectPage() {
-  const { token } = useAuth();
   const router = useRouter();
   const [form, setForm] = useState({
     title: "",
@@ -30,11 +28,10 @@ export default function NewProjectPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!token) return;
     setError(null);
     setSubmitting(true);
     try {
-      const project = await api.createProject(token, form);
+      const project = await api.createProject(form);
       router.push(`/projects/${project.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Une erreur est survenue.");

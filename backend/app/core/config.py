@@ -6,7 +6,10 @@ repository root). Never hardcode secrets here.
 from functools import lru_cache
 from typing import List
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEFAULT_JWT_SECRET = "CHANGE_ME_IN_PRODUCTION"
 
 
 class Settings(BaseSettings):
@@ -22,7 +25,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+psycopg2://filmfund:filmfund@localhost:5432/filmfund"
 
     # --- Auth / JWT ---
-    JWT_SECRET: str = "CHANGE_ME_IN_PRODUCTION"
+    JWT_SECRET: str = _DEFAULT_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24h, fine for an MVP
 
@@ -49,6 +52,17 @@ class Settings(BaseSettings):
 
     # --- Storage ---
     STORAGE_URL: str = ""
+
+    @model_validator(mode="after")
+    def _forbid_default_jwt_secret_in_production(self) -> "Settings":
+        # Signing tokens with the placeholder that's committed in this
+        # public repo would let anyone forge a valid session for any
+        # user. Fail fast rather than run insecurely.
+        if self.ENVIRONMENT == "production" and self.JWT_SECRET == _DEFAULT_JWT_SECRET:
+            raise ValueError(
+                "JWT_SECRET must be set to a real random value when ENVIRONMENT=production."
+            )
+        return self
 
 
 @lru_cache

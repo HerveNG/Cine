@@ -7,7 +7,6 @@ import AppShell from "@/components/AppShell";
 import BudgetPanel from "@/components/BudgetPanel";
 import FundingMatchesPanel from "@/components/FundingMatchesPanel";
 import ProductionCalendarPanel from "@/components/ProductionCalendarPanel";
-import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { Project, ProjectStatus } from "@/lib/types";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/types";
@@ -17,7 +16,6 @@ const STATUSES = Object.keys(PROJECT_STATUS_LABELS) as ProjectStatus[];
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const projectId = Number(params.id);
-  const { token } = useAuth();
   const router = useRouter();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -26,22 +24,22 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token || Number.isNaN(projectId)) return;
+    if (Number.isNaN(projectId)) return;
     api
-      .getProject(token, projectId)
+      .getProject(projectId)
       .then(setProject)
       .catch((err) => {
         if (err instanceof ApiError && err.status === 404) setNotFound(true);
         else setError("Impossible de charger ce projet.");
       });
-  }, [token, projectId]);
+  }, [projectId]);
 
   async function handleSave() {
-    if (!token || !project) return;
+    if (!project) return;
     setSaving(true);
     setError(null);
     try {
-      const updated = await api.updateProject(token, project.id, {
+      const updated = await api.updateProject(project.id, {
         title: project.title,
         logline: project.logline ?? undefined,
         short_synopsis: project.short_synopsis ?? undefined,
@@ -58,9 +56,9 @@ export default function ProjectDetailPage() {
   }
 
   async function handleDelete() {
-    if (!token || !project) return;
+    if (!project) return;
     if (!window.confirm(`Supprimer définitivement « ${project.title} » ?`)) return;
-    await api.deleteProject(token, project.id);
+    await api.deleteProject(project.id);
     router.push("/projects");
   }
 
@@ -182,7 +180,7 @@ export default function ProjectDetailPage() {
           projet.
         </p>
         <div className="mt-4">
-          {token && <AIWriterPanel token={token} projectId={project.id} />}
+          <AIWriterPanel projectId={project.id} />
         </div>
       </div>
 
@@ -192,7 +190,7 @@ export default function ProjectDetailPage() {
           Score calculé sur le type de projet, le pays et l&apos;étape de développement.
         </p>
         <div className="mt-4">
-          {token && <FundingMatchesPanel token={token} projectId={project.id} />}
+          <FundingMatchesPanel projectId={project.id} />
         </div>
       </div>
 
@@ -202,7 +200,7 @@ export default function ProjectDetailPage() {
           Catégories et lignes de budget, sous-totaux calculés automatiquement.
         </p>
         <div className="mt-4">
-          {token && <BudgetPanel token={token} projectId={project.id} />}
+          <BudgetPanel projectId={project.id} />
         </div>
       </div>
 
@@ -212,7 +210,7 @@ export default function ProjectDetailPage() {
           Jalons de production, triés chronologiquement.
         </p>
         <div className="mt-4">
-          {token && <ProductionCalendarPanel token={token} projectId={project.id} />}
+          <ProductionCalendarPanel projectId={project.id} />
         </div>
       </div>
     </AppShell>

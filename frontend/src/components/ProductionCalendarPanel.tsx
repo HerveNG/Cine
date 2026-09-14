@@ -8,13 +8,7 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export default function ProductionCalendarPanel({
-  token,
-  projectId,
-}: {
-  token: string;
-  projectId: number;
-}) {
+export default function ProductionCalendarPanel({ projectId }: { projectId: number }) {
   const [milestones, setMilestones] = useState<ProductionMilestone[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -24,19 +18,19 @@ export default function ProductionCalendarPanel({
 
   function reload() {
     api
-      .listMilestones(token, projectId)
+      .listMilestones(projectId)
       .then(setMilestones)
       .catch(() => setError("Impossible de charger le calendrier."));
   }
 
-  useEffect(reload, [token, projectId]);
+  useEffect(reload, [projectId]);
 
   async function addMilestone() {
     if (!title.trim() || !startDate) return;
     setSaving(true);
     setError(null);
     try {
-      await api.createMilestone(token, projectId, {
+      await api.createMilestone(projectId, {
         title,
         start_date: startDate,
         end_date: endDate || undefined,
@@ -53,7 +47,7 @@ export default function ProductionCalendarPanel({
   }
 
   async function deleteMilestone(id: number) {
-    await api.deleteMilestone(token, projectId, id);
+    await api.deleteMilestone(projectId, id);
     reload();
   }
 

@@ -6,63 +6,46 @@ import type { User } from "./types";
 
 interface AuthContextValue {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: Parameters<typeof api.register>[0]) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "filmfund_token";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
-    if (!stored) {
-      setIsLoading(false);
-      return;
-    }
-    setToken(stored);
+    // No token to read client-side — the session lives entirely in the
+    // httpOnly cookie, which the browser attaches automatically. Asking
+    // the backend "who am I" is the only way to know if it's still valid.
     api
-      .me(stored)
+      .me()
       .then(setUser)
-      .catch(() => {
-        window.localStorage.removeItem(STORAGE_KEY);
-        setToken(null);
-      })
+      .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
 
-  function persist(newToken: string, newUser: User) {
-    window.localStorage.setItem(STORAGE_KEY, newToken);
-    setToken(newToken);
-    setUser(newUser);
-  }
-
   async function login(email: string, password: string) {
     const res = await api.login(email, password);
-    persist(res.access_token, res.user);
+    setUser(res.user);
   }
 
   async function register(payload: Parameters<typeof api.register>[0]) {
     const res = await api.register(payload);
-    persist(res.access_token, res.user);
+    setUser(res.user);
   }
 
-  function logout() {
-    window.localStorage.removeItem(STORAGE_KEY);
-    setToken(null);
+  async function logout() {
+    await api.logout();
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

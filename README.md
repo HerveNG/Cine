@@ -269,11 +269,33 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
   les autres types de rôle (`AUTHOR`/`DIRECTOR`/`PRODUCER`/`INSTITUTION`)
   restent purement déclaratifs (mêmes droits sur leurs propres données).
 
+### SECURITY HARDENING (revue post-Phase 6)
+
+- **Faille de privilège corrigée** : l'inscription (`POST /auth/register`)
+  rejette désormais `user_type=ADMIN` — jusque-là n'importe qui pouvait
+  s'auto-attribuer les droits admin (utilisés depuis la Phase 5).
+- **JWT en cookie `httpOnly` + `SameSite=Lax`** (plus jamais dans le
+  corps JSON ni `localStorage`) — immunisé contre le vol de token par
+  XSS. `POST /auth/logout` efface le cookie.
+- **Rate limiting** (`slowapi`, 5/minute/IP) sur `/auth/login` et
+  `/auth/register`.
+- **En-têtes de sécurité** (`X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Permissions-Policy`, HSTS en production) sur
+  toutes les réponses.
+- **Comparaison en temps constant** du secret webhook n8n
+  (`secrets.compare_digest`).
+- **`JWT_SECRET` par défaut bloqué en production** — l'app refuse de
+  démarrer plutôt que de signer des tokens avec le placeholder commité.
+- **Validation renforcée** : mot de passe ≥ 8 caractères, montants/durées
+  non négatifs, dates de jalon cohérentes.
+- 6 nouveaux tests dédiés (`tests/test_security.py` + ajouts dans
+  `test_auth.py`), 54 tests backend au total.
+
 ### KNOWN ISSUES
 
 Voir [docs/known-issues.md](docs/known-issues.md) pour le détail complet :
-JWT stocké en `localStorage` (à migrer vers cookie httpOnly avant prod), pas
-de rate limiting, pas d'OAuth Google, polices système par défaut (pas de
+pas de réinitialisation de mot de passe fonctionnelle, pas d'OAuth
+Google, pas de CSP complète, polices système par défaut (pas de
 dépendance Google Fonts).
 
 ### ENVIRONMENT VARIABLES
@@ -290,8 +312,8 @@ frontend séparément).
 1. **n8n** : construire un vrai workflow de veille par fonds à partir du
    modèle (`n8n/workflows/funding-watch.example.json`) — la logique de
    détection de changement par site officiel reste à écrire.
-2. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
-   audit logs, OAuth Google.
+2. Durcissement sécurité restant : réinitialisation de mot de passe,
+   audit logs, OAuth Google, CSP complète, audit de dépendances en CI.
 3. AI Writer : vérifier le provider OpenAI avec une vraie clé API (la
    sélection et la gestion d'erreur sont testées, pas encore un appel
    réseau réel — voir known-issues.md), streaming de la réponse IA,

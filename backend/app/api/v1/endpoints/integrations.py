@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -23,7 +25,10 @@ def _verify_n8n_secret(x_n8n_secret: str | None = Header(default=None)) -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Intégration n8n non configurée (N8N_WEBHOOK_SECRET manquant).",
         )
-    if x_n8n_secret != settings.N8N_WEBHOOK_SECRET:
+    # Constant-time comparison — a naive `!=` would leak how many leading
+    # characters matched via response-timing, letting an attacker guess
+    # the secret byte-by-byte.
+    if not x_n8n_secret or not secrets.compare_digest(x_n8n_secret, settings.N8N_WEBHOOK_SECRET):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Secret n8n invalide.")
 
 

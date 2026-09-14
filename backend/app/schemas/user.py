@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from app.models.user import SubscriptionPlan, UserType
 
@@ -17,6 +17,24 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+    @field_validator("user_type")
+    @classmethod
+    def reject_admin_self_registration(cls, value: UserType) -> UserType:
+        # UserType.ADMIN now grants real authority (Phase 5: changing any
+        # user's subscription plan) — self-registering as admin would be a
+        # privilege escalation. Admin accounts are created out-of-band
+        # (scripts/seed.py or direct DB access) only.
+        if value == UserType.ADMIN:
+            raise ValueError("Impossible de s'inscrire directement avec le rôle ADMIN.")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def enforce_minimum_password_length(cls, value: str) -> str:
+        if len(value) < 8:
+            raise ValueError("Le mot de passe doit contenir au moins 8 caractères.")
+        return value
 
 
 class UserUpdate(BaseModel):

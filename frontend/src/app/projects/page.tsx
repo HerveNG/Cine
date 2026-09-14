@@ -9,19 +9,19 @@ import type { Project } from "@/lib/types";
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/types";
 
 export default function ProjectsPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!user) return;
     api
-      .listProjects(token)
+      .listProjects()
       .then(setProjects)
       .catch(() => setError("Impossible de charger vos projets."))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [user]);
 
   return (
     <AppShell>

@@ -6,13 +6,11 @@ import type { AIDocument, DocumentType } from "@/lib/types";
 import { DOCUMENT_TYPE_LABELS, DOCUMENT_TYPES } from "@/lib/types";
 
 function DocumentCard({
-  token,
   projectId,
   documentType,
   document,
   onChanged,
 }: {
-  token: string;
   projectId: number;
   documentType: DocumentType;
   document: AIDocument | undefined;
@@ -53,7 +51,7 @@ function DocumentCard({
     }
     setShowHistory(true);
     if (!history) {
-      const versions = await api.listDocumentVersions(token, projectId, documentType);
+      const versions = await api.listDocumentVersions(projectId, documentType);
       setHistory(versions);
     }
   }
@@ -80,7 +78,7 @@ function DocumentCard({
       <div className="mt-4 flex flex-wrap gap-2">
         {!document && (
           <button
-            onClick={() => run("generate", () => api.generateDocument(token, projectId, documentType))}
+            onClick={() => run("generate", () => api.generateDocument(projectId, documentType))}
             disabled={loading !== null}
             className="rounded-md bg-gold px-3 py-1.5 text-sm font-medium text-[#14140f] hover:opacity-90 disabled:opacity-50"
           >
@@ -91,9 +89,7 @@ function DocumentCard({
         {document && (
           <>
             <button
-              onClick={() =>
-                run("regenerate", () => api.regenerateDocument(token, projectId, document.id))
-              }
+              onClick={() => run("regenerate", () => api.regenerateDocument(projectId, document.id))}
               disabled={loading !== null}
               className="rounded-md border border-border-subtle px-3 py-1.5 text-sm hover:border-gold hover:text-gold-soft disabled:opacity-50"
             >
@@ -107,9 +103,7 @@ function DocumentCard({
               Améliorer
             </button>
             <button
-              onClick={() =>
-                run("shorten", () => api.shortenDocument(token, projectId, document.id))
-              }
+              onClick={() => run("shorten", () => api.shortenDocument(projectId, document.id))}
               disabled={loading !== null}
               className="rounded-md border border-border-subtle px-3 py-1.5 text-sm hover:border-gold hover:text-gold-soft disabled:opacity-50"
             >
@@ -137,9 +131,7 @@ function DocumentCard({
           />
           <button
             onClick={() =>
-              run("improve", () =>
-                api.improveDocument(token, projectId, document.id, instruction)
-              )
+              run("improve", () => api.improveDocument(projectId, document.id, instruction))
             }
             disabled={loading !== null || !instruction.trim()}
             className="rounded-md bg-gold px-3 py-1.5 text-sm font-medium text-[#14140f] hover:opacity-90 disabled:opacity-50"
@@ -166,26 +158,20 @@ function DocumentCard({
   );
 }
 
-export default function AIWriterPanel({
-  token,
-  projectId,
-}: {
-  token: string;
-  projectId: number;
-}) {
+export default function AIWriterPanel({ projectId }: { projectId: number }) {
   const [documents, setDocuments] = useState<Record<string, AIDocument> | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .listDocuments(token, projectId)
+      .listDocuments(projectId)
       .then((docs) => {
         const byType: Record<string, AIDocument> = {};
         for (const doc of docs) byType[doc.document_type] = doc;
         setDocuments(byType);
       })
       .catch(() => setLoadError("Impossible de charger les documents IA."));
-  }, [token, projectId]);
+  }, [projectId]);
 
   if (loadError) {
     return <p className="text-sm text-danger">{loadError}</p>;
@@ -200,7 +186,6 @@ export default function AIWriterPanel({
       {DOCUMENT_TYPES.map((type) => (
         <DocumentCard
           key={type}
-          token={token}
           projectId={projectId}
           documentType={type}
           document={documents[type]}

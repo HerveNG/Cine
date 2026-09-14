@@ -8,9 +8,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+class AuthResponse(BaseModel):
+    """The JWT itself is never in this body — it only ever travels via the
+    httpOnly `access_token` cookie set on the response (see
+    core/security.py::set_access_token_cookie). Putting it here too would
+    defeat the point of httpOnly (any JS that reads the fetch response
+    could exfiltrate it)."""
+
     user: UserRead
 
 

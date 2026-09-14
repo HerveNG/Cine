@@ -8,29 +8,27 @@ import { api } from "@/lib/api";
 import type { Notification } from "@/lib/types";
 
 export default function NotificationsPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function reload() {
-    if (!token) return;
+    if (!user) return;
     api
-      .listNotifications(token)
+      .listNotifications()
       .then(setNotifications)
       .catch(() => setError("Impossible de charger les notifications."));
   }
 
-  useEffect(reload, [token]);
+  useEffect(reload, [user]);
 
   async function markRead(id: number) {
-    if (!token) return;
-    await api.markNotificationRead(token, id);
+    await api.markNotificationRead(id);
     reload();
   }
 
   async function markAllRead() {
-    if (!token) return;
-    await api.markAllNotificationsRead(token);
+    await api.markAllNotificationsRead();
     reload();
   }
 

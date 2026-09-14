@@ -4,16 +4,22 @@ from sqlalchemy.orm import Session
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, Token
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.auth import LoginRequest
+from app.schemas.user import UserCreate
 
 
 class AuthService:
+    """register/login return the raw (token, user) pair rather than a
+    response schema — the endpoint layer is what decides how the token is
+    transported (an httpOnly cookie, see api/v1/endpoints/auth.py), so it
+    shouldn't be baked into a schema here.
+    """
+
     def __init__(self, db: Session):
         self.db = db
         self.users = UserRepository(db)
 
-    def register(self, payload: UserCreate) -> Token:
+    def register(self, payload: UserCreate) -> tuple[str, User]:
         if self.users.get_by_email(payload.email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -32,9 +38,9 @@ class AuthService:
         )
         user = self.users.create(user)
         token = create_access_token(subject=str(user.id))
-        return Token(access_token=token, user=UserRead.model_validate(user))
+        return token, user
 
-    def login(self, payload: LoginRequest) -> Token:
+    def login(self, payload: LoginRequest) -> tuple[str, User]:
         user = self.users.get_by_email(payload.email)
         if user is None or not verify_password(payload.password, user.hashed_password):
             raise HTTPException(
@@ -47,4 +53,4 @@ class AuthService:
                 detail="Ce compte a été désactivé.",
             )
         token = create_access_token(subject=str(user.id))
-        return Token(access_token=token, user=UserRead.model_validate(user))
+        return token, user

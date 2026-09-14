@@ -6,17 +6,62 @@ ne l'est pas.
 
 ## Sécurité / production-readiness
 
-- **Stockage du JWT côté frontend** : le token est actuellement stocké dans
-  `localStorage` (voir `frontend/src/lib/auth-context.tsx`) pour simplifier
-  le MVP. C'est vulnérable au XSS. Avant mise en production réelle,
-  migrer vers un cookie `httpOnly` + `secure` posé par le backend.
-- **Rate limiting** : non implémenté. À ajouter (ex. `slowapi`) avant
-  exposition publique, en particulier sur `/auth/login` et `/auth/register`.
+### Corrigé — revue de sécurité post-Phase 6
+
+- **Faille de privilège critique corrigée** : jusqu'à cette revue,
+  `POST /auth/register` acceptait `"user_type": "ADMIN"` dans le corps de
+  la requête — n'importe qui pouvait s'auto-attribuer les droits admin
+  (utilisés depuis la Phase 5 pour changer le plan de n'importe quel
+  utilisateur). `UserCreate` rejette maintenant explicitement ADMIN à
+  l'inscription (`app/schemas/user.py`) ; les comptes admin ne sont créés
+  que hors ligne (`scripts/seed.py` ou accès DB direct). Testé
+  (`tests/test_auth.py::test_register_rejects_self_assigned_admin_role`).
+- **JWT en cookie httpOnly** : le token ne voyage plus jamais dans le
+  corps JSON ni dans `localStorage` — uniquement via un cookie
+  `httpOnly` + `SameSite=Lax` posé par le backend
+  (`app/core/security.py::set_access_token_cookie`), immunisé contre le
+  vol de token par XSS. `SameSite=Lax` suffit comme protection CSRF pour
+  une API JSON appelée via `fetch` (pas de cookie envoyé sur une requête
+  cross-site hors navigation de premier niveau), sans jeton CSRF
+  supplémentaire. L'en-tête `Authorization: Bearer` reste accepté en
+  repli côté backend — délibérément, pour que la suite de tests et
+  Swagger `/docs` continuent de fonctionner sans réécriture, pas un
+  oubli de compatibilité.
+- **Rate limiting** : `slowapi`, 5 tentatives/minute par IP sur
+  `/auth/login` et `/auth/register` (`app/core/rate_limit.py`).
+- **En-têtes de sécurité** : `X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Permissions-Policy` sur toutes les réponses
+  (`app/core/security_headers.py`) ; `Strict-Transport-Security`
+  uniquement quand `ENVIRONMENT=production` (HSTS n'a pas de sens en
+  HTTP local).
+- **`JWT_SECRET` par défaut bloqué en production** : l'application refuse
+  de démarrer si `ENVIRONMENT=production` et que `JWT_SECRET` vaut
+  encore le placeholder commité dans ce dépôt public
+  (`app/core/config.py`).
+- **Secret webhook n8n comparé en temps constant** : `secrets.compare_digest`
+  au lieu d'un `!=` naïf, qui aurait pu laisser deviner le secret
+  octet par octet via la mesure du temps de réponse.
+- **Validation renforcée** : mot de passe minimum 8 caractères à
+  l'inscription ; montants de budget (`quantity`, `unit_cost`) et durées
+  de projet non négatifs ; libellés non vides ; date de fin de jalon
+  jamais antérieure à la date de début.
+
+### Restant à faire
+
 - **Réinitialisation de mot de passe** : les schémas Pydantic existent
   (`PasswordResetRequest`, `PasswordResetConfirm`) mais aucun endpoint ni
   envoi d'email réel n'est branché — SMTP n'est pas configuré. Ne pas
   annoncer cette fonctionnalité comme disponible.
-- **OAuth Google** : prévu par le prompt maître, non implémenté en Phase 1.
+- **OAuth Google** : prévu par le prompt maître, non implémenté.
+- **Pas de CSP (Content-Security-Policy)** : les en-têtes ajoutés
+  couvrent le clickjacking/MIME-sniffing/referrer, mais pas encore une
+  politique CSP complète (plus complexe à régler sans casser le frontend
+  Next.js) ni d'audit de dépendances automatisé (`pip-audit`/`npm audit`
+  en CI).
+- **Rate limiting en mémoire, pas partagé** : `slowapi` stocke les
+  compteurs en mémoire du process — suffisant pour un déploiement
+  mono-process, mais à basculer sur Redis si l'app tourne un jour sur
+  plusieurs workers/instances (sinon chaque instance a sa propre limite).
 
 ## AI Writer (Phase 2) — limites connues
 

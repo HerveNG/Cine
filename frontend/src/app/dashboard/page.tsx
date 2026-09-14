@@ -26,15 +26,15 @@ function StatCard({ label, value, note }: { label: string; value: number; note?:
 }
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [topMatches, setTopMatches] = useState<TopMatch[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
-    Promise.all([api.dashboardStats(token), api.listProjects(token)])
+    if (!user) return;
+    Promise.all([api.dashboardStats(), api.listProjects()])
       .then(async ([s, allProjects]) => {
         setStats(s);
         setProjects(allProjects);
@@ -42,7 +42,7 @@ export default function DashboardPage() {
         const matchesByProject = await Promise.all(
           allProjects.map((project) =>
             api
-              .getFundingMatches(token, project.id)
+              .getFundingMatches(project.id)
               .then((matches) => ({ project, matches }))
               .catch(() => ({ project, matches: [] as FundingMatch[] }))
           )
@@ -56,7 +56,7 @@ export default function DashboardPage() {
         setTopMatches(flattened.slice(0, 4));
       })
       .catch(() => setError("Impossible de charger le tableau de bord."));
-  }, [token]);
+  }, [user]);
 
   const visibleProjects = projects.slice(0, 4);
 

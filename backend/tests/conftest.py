@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
+from app.core.rate_limit import limiter
 from app.main import app
 
 # Real Postgres test database — created alongside the dev DB
@@ -28,6 +29,10 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 def _fresh_schema():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    # The rate limiter's in-memory storage is process-global, not per-test
+    # — without resetting it, unrelated tests would trip each other's
+    # /auth/login and /auth/register limits (see core/rate_limit.py).
+    limiter.reset()
     yield
     Base.metadata.drop_all(bind=engine)
 
@@ -56,10 +61,21 @@ def client(db_session):
 
 
 def register_user(client: TestClient, email: str, password: str = "SuperSecret123", **kwargs):
+    """The JWT no longer travels in the response body (see
+    schemas/auth.py::AuthResponse) — only via the httpOnly `access_token`
+    cookie. Tests still need a bearer string to build explicit
+    per-request Authorization headers (see auth_headers below and the
+    priority rule in core/deps.py::_extract_token), so we pull it out of
+    the cookie the endpoint just set and keep exposing it under the same
+    "access_token" key so every existing call site
+    (`register_user(...)["access_token"]`) keeps working unchanged.
+    """
     payload = {"email": email, "password": password, **kwargs}
     resp = client.post("/api/v1/auth/register", json=payload)
     assert resp.status_code == 201, resp.text
-    return resp.json()
+    data = resp.json()
+    data["access_token"] = resp.cookies.get("access_token")
+    return data
 
 
 def auth_headers(token: str) -> dict:
