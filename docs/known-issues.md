@@ -23,9 +23,13 @@ ne l'est pas.
 - **Quota de crédits appliqué depuis la Phase 5** : `FREE` = 10
   générations/mois, `PRO` = 100/mois, `STUDIO` = illimité. Voir la section
   "Monétisation" ci-dessous.
-- **Un seul provider réel branché** : `AnthropicProvider` (Claude). L'
-  abstraction (`app/services/ai/base.py`) permet d'ajouter un provider
-  OpenAI sans changer les endpoints, mais ce n'est pas fait.
+- **Deux providers réels branchés** : `anthropic` (Claude) et `openai`
+  (ChatGPT), sélectionnables via `AI_PROVIDER`/`AI_API_KEY`/`AI_MODEL` —
+  aucun changement d'endpoint requis grâce à l'abstraction
+  (`app/services/ai/base.py`). Le provider `openai` n'a pas encore été
+  vérifié avec une vraie clé API (clé à insérer ultérieurement) : la
+  sélection et la gestion d'erreur sont testées (`tests/test_ai_factory.py`),
+  mais pas un appel réseau réel comme pour `anthropic`.
 - **Pas de streaming** : la génération bloque la requête HTTP jusqu'à la
   réponse complète du modèle (pas de affichage progressif côté frontend).
 - **Contenu généré non éditable manuellement** : l'utilisateur peut

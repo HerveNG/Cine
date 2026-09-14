@@ -23,9 +23,9 @@ et matching de financements, budgets et export de dossier.
 - **Backend** : FastAPI (Python 3.11) + SQLAlchemy 2.0 + Alembic
 - **Base de données** : PostgreSQL 16 (compatible Supabase / Neon / local)
 - **Auth** : JWT (bcrypt pour le hash des mots de passe)
-- **IA (AI Writer)** : couche d'abstraction provider — Anthropic (Claude) en
-  production, ou un provider `local` déterministe sans appel réseau (défaut
-  hors-ligne et utilisé par les tests automatisés)
+- **IA (AI Writer)** : couche d'abstraction provider — Anthropic (Claude)
+  ou OpenAI (ChatGPT) en production, ou un provider `local` déterministe
+  sans appel réseau (défaut hors-ligne et utilisé par les tests automatisés)
 - **Conteneurisation** : Docker / Docker Compose
 - **Automatisation (prévu)** : n8n
 
@@ -183,10 +183,12 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
   projet (logline, synopsis court/long, note d'intention, traitement, pitch),
   avec versioning complet (chaque génération/régénération/amélioration/
   raccourcissement crée une nouvelle version, jamais d'écrasement) et
-  historique consultable. Couche d'abstraction `AIProvider` avec deux
-  implémentations : `anthropic` (appel réel à l'API Claude via
-  `AI_API_KEY`/`AI_MODEL`) et `local` (déterministe, sans réseau — utilisé
-  par les tests et comme option hors-ligne). Isolation utilisateur héritée
+  historique consultable. Couche d'abstraction `AIProvider` avec trois
+  implémentations : `anthropic` (Claude, vérifié en conditions réelles),
+  `openai` (ChatGPT, sélection et gestion d'erreur testées — clé API à
+  insérer plus tard) et `local` (déterministe, sans réseau — utilisé par
+  les tests et comme option hors-ligne), toutes pilotées par
+  `AI_PROVIDER`/`AI_API_KEY`/`AI_MODEL`. Isolation utilisateur héritée
   du CRUD projets (404 sur un document d'un projet qui n'est pas le sien).
   Endpoints sous `/api/v1/projects/{project_id}/documents/*`.
 - **Funding Intelligence (Phase 3)** : 7 financements réels et curatés
@@ -273,9 +275,10 @@ frontend séparément).
    notifications (ex. nouvelle session de dépôt sur un fonds suivi).
 2. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
    audit logs, OAuth Google.
-3. AI Writer : ajouter un provider OpenAI (l'abstraction le permet sans
-   changement d'API), streaming de la réponse IA, édition manuelle du
-   contenu généré avant sauvegarde.
+3. AI Writer : vérifier le provider OpenAI avec une vraie clé API (la
+   sélection et la gestion d'erreur sont testées, pas encore un appel
+   réseau réel — voir known-issues.md), streaming de la réponse IA,
+   édition manuelle du contenu généré avant sauvegarde.
 4. Funding Intelligence : élargir la liste de financements au-delà des 7
    premiers, ajouter le suivi de dates limites réelles (actuellement non
    stocké, voir known-issues.md).
