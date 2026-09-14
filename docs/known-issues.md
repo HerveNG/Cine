@@ -4,6 +4,11 @@ Ce document liste honnêtement les limites connues du MVP à ce stade, pour
 ne jamais laisser croire qu'une fonctionnalité est terminée alors qu'elle
 ne l'est pas.
 
+**Déployé en ligne** (démo) : frontend https://filmfund-africa.vercel.app,
+backend https://filmfund-africa-backend.vercel.app, base Supabase avec
+données de démo. IA désactivée (`AI_PROVIDER=none`) — voir § 7 du README.
+Les limites ci-dessous restent valables pour ce déploiement de démo.
+
 ## Sécurité / production-readiness
 
 ### Corrigé — revue de sécurité post-Phase 6

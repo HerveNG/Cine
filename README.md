@@ -163,10 +163,34 @@ d'administration pour l'instant — voir known-issues.md).
 
 ## 7. Déploiement
 
-Ce MVP n'a pas encore de pipeline de déploiement dédié. Le `docker-compose.yml`
-sert de base : en production, séparez la base de données (ex. instance
-Supabase/Neon managée), servez le frontend derrière un CDN/reverse proxy,
-utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
+### En ligne (démo)
+
+- **Frontend** : https://filmfund-africa.vercel.app
+- **Backend / API** : https://filmfund-africa-backend.vercel.app (Swagger : `/docs`)
+- **Base de données** : Supabase (projet "FilmFund Africa", région eu-west-1, RLS activé sur les 11 tables)
+- **Données** : comptes et financements de démo pré-chargés (voir § 6)
+- **IA** : désactivée en production (`AI_PROVIDER=none`) — pas de clé dédiée à la démo ;
+  `/documents/generate` répond honnêtement 503 plutôt que de simuler une génération
+
+Architecture : le frontend (Next.js sur Vercel) proxifie `/api/*` vers le
+backend (FastAPI sur Vercel, autre projet) via un rewrite
+([next.config.ts](frontend/next.config.ts)), pour que le cookie httpOnly
+d'authentification reste same-origin — deux sous-domaines `*.vercel.app`
+distincts sont des sites différents pour `SameSite=Lax`. Le rewrite cible
+le domaine nu du projet backend (pas l'alias d'équipe `-el-man`, protégé
+par défaut par Vercel Authentication/SSO).
+
+Pour redéployer : push sur `main` (déploiement automatique côté backend et
+frontend). Les variables d'environnement se gèrent dans les dashboards
+Vercel de chaque projet (Project Settings → Environment Variables) — voir
+`.env.example` pour la liste complète.
+
+### Auto-hébergé
+
+Le `docker-compose.yml` sert de base pour un déploiement auto-hébergé : en
+production, séparez la base de données (ex. instance Supabase/Neon
+managée), servez le frontend derrière un CDN/reverse proxy, utilisez des
+secrets gérés (pas de `.env` en clair), et activez HTTPS.
 
 ---
 
