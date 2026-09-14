@@ -52,9 +52,46 @@ export interface Project {
   long_synopsis: string | null;
   theme: string | null;
   target_audience: string | null;
+  budget_currency: string | null;
   status: ProjectStatus;
   created_at: string;
   updated_at: string;
+}
+
+export interface BudgetLineItem {
+  id: number;
+  category_id: number;
+  label: string;
+  quantity: string;
+  unit_cost: string;
+  notes: string | null;
+  subtotal: string;
+  created_at: string;
+}
+
+export interface BudgetCategory {
+  id: number;
+  project_id: number;
+  name: string;
+  position: number;
+  line_items: BudgetLineItem[];
+  subtotal: string;
+}
+
+export interface BudgetSummary {
+  currency: string | null;
+  categories: BudgetCategory[];
+  total: string;
+}
+
+export interface ProductionMilestone {
+  id: number;
+  project_id: number;
+  title: string;
+  start_date: string;
+  end_date: string | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export type DocumentType =

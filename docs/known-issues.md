@@ -63,9 +63,22 @@ ne l'est pas.
   le script de seed (aucune interface pour en ajouter/modifier depuis
   l'application).
 
+## Budget & calendrier de production (Phase 4) — limites connues
+
+- **Pas de conversion de devise** : la devise est un champ libre par
+  projet (ex. "XOF", "EUR"), sans taux de change ni agrégation
+  multi-devises — chaque budget reste dans sa devise locale, tel quel.
+- **Calendrier = liste chronologique, pas une vue graphique** : les
+  jalons sont affichés triés par date, sans diagramme de Gantt ni
+  calendrier visuel — suffisant pour ce MVP, mais à ne pas présenter
+  comme un outil de planning avancé.
+- **Pas d'export** : aucun export PDF/Excel du budget ou du calendrier.
+- **Pas de rapprochement budget ↔ financements** : le budget total d'un
+  projet et les financements compatibles (Phase 3) ne sont pas encore
+  reliés (ex. "combien reste-t-il à financer ?").
+
 ## Fonctionnalités non implémentées (par design, cf. phasage du prompt maître)
 
-- Budget, plan de financement, calendrier — Phase 4.
 - Abonnements, crédits IA — Phase 5.
 - n8n, veille automatisée, notifications — Phase 6.
 - Export PDF/DOCX/ZIP — non implémenté.

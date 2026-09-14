@@ -17,6 +17,7 @@ class ProjectBase(BaseModel):
     long_synopsis: str | None = None
     theme: str | None = None
     target_audience: str | None = None
+    budget_currency: str | None = None
 
 
 class ProjectCreate(ProjectBase):
@@ -35,6 +36,7 @@ class ProjectUpdate(BaseModel):
     long_synopsis: str | None = None
     theme: str | None = None
     target_audience: str | None = None
+    budget_currency: str | None = None
     status: ProjectStatus | None = None
 
 

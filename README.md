@@ -6,12 +6,13 @@ SaaS destiné aux auteurs, réalisateurs et producteurs africains — développe
 de projets audiovisuels, génération de documents assistée par IA, recherche
 et matching de financements, budgets et export de dossier.
 
-> **Statut : MVP — Phases 1, 2 et 3 livrées.** Authentification, gestion des
-> utilisateurs, CRUD projets, tableau de bord, AI Writer (génération de
-> documents par IA, versionnés) et Funding Intelligence (recherche et
-> matching à score explicable sur des financements réels) sont réellement
-> fonctionnels et testés. Les autres modules du prompt maître (Budget,
-> Abonnements, n8n) ne sont **pas encore implémentés** — voir
+> **Statut : MVP — Phases 1, 2, 3 et 4 livrées.** Authentification, gestion
+> des utilisateurs, CRUD projets, tableau de bord, AI Writer (génération de
+> documents par IA, versionnés), Funding Intelligence (recherche et matching
+> à score explicable sur des financements réels) et Budget & plan de
+> financement (catégories, sous-totaux calculés, calendrier de production)
+> sont réellement fonctionnels et testés. Les autres modules du prompt
+> maître (Abonnements, n8n) ne sont **pas encore implémentés** — voir
 > [docs/known-issues.md](docs/known-issues.md) pour le détail honnête de
 > ce qui manque.
 
@@ -161,7 +162,7 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
 
 ---
 
-## Rapport de livraison — Phases 1, 2 et 3
+## Rapport de livraison — Phases 1, 2, 3 et 4
 
 ### FEATURES IMPLEMENTED
 
@@ -194,21 +195,32 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
   traités comme "non restreints" plutôt que listés arbitrairement, et les
   dates limites précises ne sont pas stockées (elles changent chaque
   année) — un champ texte renvoie vers le site officiel.
+- **Budget & plan de financement (Phase 4)** : catégories de budget par
+  projet, lignes en quantité × coût unitaire, sous-totaux et total
+  **calculés côté backend à chaque lecture** (jamais stockés — une seule
+  source de vérité, aucun risque de désynchronisation), devise libre par
+  projet (XOF, EUR, USD…, sans conversion automatique). Calendrier de
+  production : jalons (titre, dates, notes) triés chronologiquement — une
+  liste, pas une vue calendrier graphique (hors scope pour ce MVP).
+  Isolation utilisateur héritée du CRUD projets, cascade de suppression
+  (supprimer une catégorie supprime ses lignes, supprimer un projet
+  supprime tout). Endpoints sous `/api/v1/projects/{project_id}/budget/*`
+  et `/api/v1/projects/{project_id}/milestones`.
 - Dashboard : statistiques réelles (projets, documents générés,
   opportunités compatibles avec score ≥ 60) ; seules les échéances
   précises restent à 0, honnêtement (non trackées)
 - Frontend Next.js complet : landing page, inscription, connexion, dashboard
   avec recommandations de financement réelles, liste/création/édition/
-  suppression de projets, panneau "Assistant IA" et "Financements
-  compatibles" par projet, navigation avec modules futurs clairement
-  marqués "Bientôt"
+  suppression de projets, panneaux "Assistant IA", "Financements
+  compatibles", "Budget" et "Calendrier de production" par projet,
+  navigation avec modules futurs clairement marqués "Bientôt"
 - Design premium sobre et cinématographique (fond sombre, accents or)
 - Docker Compose (frontend + backend + postgres, n8n en option)
 - Seed de démonstration (2 utilisateurs, 3 projets, 7 financements réels)
-- 23 tests backend automatisés, exécutés contre une vraie base PostgreSQL
+- 33 tests backend automatisés, exécutés contre une vraie base PostgreSQL
   (AI Writer forcé sur le provider `local` en tests — jamais d'appel réseau
   ni de dépendance à une clé API dans la suite automatisée ; le matching
-  de financements est un calcul déterministe, sans IA)
+  de financements et les calculs de budget sont déterministes, sans IA)
 - Build frontend (TypeScript strict + ESLint) sans erreur
 
 ### FEATURES PARTIALLY IMPLEMENTED
@@ -235,19 +247,19 @@ Voir `.env.example` (racine) et `frontend/.env.local.example`.
 Voir sections 3 et 4 ci-dessus (`docker compose up --build`, ou backend +
 frontend séparément).
 
-### NEXT STEPS (Phase 4 et suivantes, cf. prompt maître)
+### NEXT STEPS (Phase 5 et suivantes, cf. prompt maître)
 
-1. **Phase 4 — Budget & plan de financement** : catégories de budget,
-   calcul automatique des sous-totaux, calendrier de production.
-2. **Phase 5 — Monétisation** : plans d'abonnement, crédits IA configurables
+1. **Phase 5 — Monétisation** : plans d'abonnement, crédits IA configurables
    (l'AI Writer n'a aujourd'hui aucune limite de quota par utilisateur).
-3. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
+2. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
    notifications (ex. nouvelle session de dépôt sur un fonds suivi).
-4. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
+3. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
    audit logs, OAuth Google.
-5. AI Writer : ajouter un provider OpenAI (l'abstraction le permet sans
+4. AI Writer : ajouter un provider OpenAI (l'abstraction le permet sans
    changement d'API), streaming de la réponse IA, édition manuelle du
    contenu généré avant sauvegarde.
-6. Funding Intelligence : élargir la liste de financements au-delà des 7
+5. Funding Intelligence : élargir la liste de financements au-delà des 7
    premiers, ajouter le suivi de dates limites réelles (actuellement non
    stocké, voir known-issues.md).
+6. Budget : export PDF/Excel, conversion de devise indicative, plan de
+   financement (rapprochement budget ↔ financements obtenus).

@@ -4,7 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AIWriterPanel from "@/components/AIWriterPanel";
 import AppShell from "@/components/AppShell";
+import BudgetPanel from "@/components/BudgetPanel";
 import FundingMatchesPanel from "@/components/FundingMatchesPanel";
+import ProductionCalendarPanel from "@/components/ProductionCalendarPanel";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { Project, ProjectStatus } from "@/lib/types";
@@ -44,6 +46,7 @@ export default function ProjectDetailPage() {
         logline: project.logline ?? undefined,
         short_synopsis: project.short_synopsis ?? undefined,
         long_synopsis: project.long_synopsis ?? undefined,
+        budget_currency: project.budget_currency ?? undefined,
         status: project.status,
       });
       setProject(updated);
@@ -105,19 +108,30 @@ export default function ProjectDetailPage() {
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-muted">Statut</label>
-          <select
-            value={project.status}
-            onChange={(e) => setProject({ ...project, status: e.target.value as ProjectStatus })}
-            className="w-full rounded-md border border-border-subtle bg-surface px-3 py-2 outline-none focus:border-gold"
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {PROJECT_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm text-muted">Statut</label>
+            <select
+              value={project.status}
+              onChange={(e) => setProject({ ...project, status: e.target.value as ProjectStatus })}
+              className="w-full rounded-md border border-border-subtle bg-surface px-3 py-2 outline-none focus:border-gold"
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {PROJECT_STATUS_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-muted">Devise (budget)</label>
+            <input
+              value={project.budget_currency ?? ""}
+              onChange={(e) => setProject({ ...project, budget_currency: e.target.value })}
+              placeholder="XOF, EUR, USD…"
+              className="w-full rounded-md border border-border-subtle bg-surface px-3 py-2 outline-none focus:border-gold"
+            />
+          </div>
         </div>
 
         <div>
@@ -179,6 +193,26 @@ export default function ProjectDetailPage() {
         </p>
         <div className="mt-4">
           {token && <FundingMatchesPanel token={token} projectId={project.id} />}
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="font-display text-xl">Budget</h2>
+        <p className="mt-1 text-sm text-muted">
+          Catégories et lignes de budget, sous-totaux calculés automatiquement.
+        </p>
+        <div className="mt-4">
+          {token && <BudgetPanel token={token} projectId={project.id} />}
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="font-display text-xl">Calendrier de production</h2>
+        <p className="mt-1 text-sm text-muted">
+          Jalons de production, triés chronologiquement.
+        </p>
+        <div className="mt-4">
+          {token && <ProductionCalendarPanel token={token} projectId={project.id} />}
         </div>
       </div>
     </AppShell>

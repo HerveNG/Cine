@@ -1,6 +1,9 @@
 import type {
   AIDocument,
   AuthResponse,
+  BudgetCategory,
+  BudgetLineItem,
+  BudgetSummary,
   DashboardStats,
   DocumentType,
   FundingMatch,
@@ -8,6 +11,7 @@ import type {
   Project,
   ProjectStatus,
   ProjectType,
+  ProductionMilestone,
   User,
 } from "./types";
 
@@ -119,6 +123,7 @@ export const api = {
       long_synopsis: string;
       theme: string;
       target_audience: string;
+      budget_currency: string;
       status: ProjectStatus;
     }>
   ) =>
@@ -189,4 +194,70 @@ export const api = {
 
   getFundingMatches: (token: string, projectId: number) =>
     request<FundingMatch[]>(`/projects/${projectId}/funding-matches`, { token }),
+
+  getBudget: (token: string, projectId: number) =>
+    request<BudgetSummary>(`/projects/${projectId}/budget`, { token }),
+
+  createBudgetCategory: (token: string, projectId: number, name: string) =>
+    request<BudgetCategory>(`/projects/${projectId}/budget/categories`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteBudgetCategory: (token: string, projectId: number, categoryId: number) =>
+    request<void>(`/projects/${projectId}/budget/categories/${categoryId}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  createBudgetLineItem: (
+    token: string,
+    projectId: number,
+    categoryId: number,
+    payload: { label: string; quantity: string; unit_cost: string; notes?: string }
+  ) =>
+    request<BudgetLineItem>(`/projects/${projectId}/budget/categories/${categoryId}/items`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    }),
+
+  updateBudgetLineItem: (
+    token: string,
+    projectId: number,
+    itemId: number,
+    payload: Partial<{ label: string; quantity: string; unit_cost: string; notes: string }>
+  ) =>
+    request<BudgetLineItem>(`/projects/${projectId}/budget/items/${itemId}`, {
+      method: "PUT",
+      token,
+      body: JSON.stringify(payload),
+    }),
+
+  deleteBudgetLineItem: (token: string, projectId: number, itemId: number) =>
+    request<void>(`/projects/${projectId}/budget/items/${itemId}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  listMilestones: (token: string, projectId: number) =>
+    request<ProductionMilestone[]>(`/projects/${projectId}/milestones`, { token }),
+
+  createMilestone: (
+    token: string,
+    projectId: number,
+    payload: { title: string; start_date: string; end_date?: string; notes?: string }
+  ) =>
+    request<ProductionMilestone>(`/projects/${projectId}/milestones`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    }),
+
+  deleteMilestone: (token: string, projectId: number, milestoneId: number) =>
+    request<void>(`/projects/${projectId}/milestones/${milestoneId}`, {
+      method: "DELETE",
+      token,
+    }),
 };

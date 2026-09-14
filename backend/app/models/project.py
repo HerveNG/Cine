@@ -8,7 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.models.budget import BudgetCategory
     from app.models.document import Document
+    from app.models.production_milestone import ProductionMilestone
     from app.models.user import User
 
 
@@ -59,6 +61,8 @@ class Project(Base):
         Enum(ProjectStatus, name="project_status"), default=ProjectStatus.IDEA, nullable=False
     )
 
+    budget_currency: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -71,4 +75,13 @@ class Project(Base):
     owner: Mapped["User"] = relationship("User", back_populates="projects")
     documents: Mapped[list["Document"]] = relationship(
         "Document", back_populates="project", cascade="all, delete-orphan"
+    )
+    budget_categories: Mapped[list["BudgetCategory"]] = relationship(
+        "BudgetCategory",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="BudgetCategory.position",
+    )
+    milestones: Mapped[list["ProductionMilestone"]] = relationship(
+        "ProductionMilestone", back_populates="project", cascade="all, delete-orphan"
     )
