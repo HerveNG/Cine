@@ -12,6 +12,7 @@ from app.services.ai.prompts import (
     build_shorten_prompt,
 )
 from app.services.project_service import ProjectService
+from app.services.subscription_service import SubscriptionService
 
 
 class DocumentService:
@@ -21,12 +22,18 @@ class DocumentService:
     ProjectService.get_project, which is the single choke point for user
     data isolation (404 — not 403 — for a project the caller doesn't
     own). Documents themselves are never queried by user_id directly.
+
+    Every entry point also checks the caller's AI credit quota
+    (SubscriptionService.ensure_quota_available) before calling the
+    provider, and records usage only once the document is actually
+    saved — a failed provider call never costs a credit.
     """
 
     def __init__(self, db: Session):
         self.db = db
         self.projects = ProjectService(db)
         self.documents = DocumentRepository(db)
+        self.subscriptions = SubscriptionService(db)
 
     def list_documents(self, project_id: int, current_user: User) -> list[Document]:
         project = self.projects.get_project(project_id, current_user)
@@ -51,6 +58,7 @@ class DocumentService:
         content: str,
         instructions: str | None,
         provider_name: str,
+        current_user: User,
     ) -> Document:
         version = self.documents.get_next_version(project_id, document_type)
         document = Document(
@@ -61,7 +69,9 @@ class DocumentService:
             instructions=instructions,
             provider=provider_name,
         )
-        return self.documents.create(document)
+        document = self.documents.create(document)
+        self.subscriptions.record_usage(current_user, document.id)
+        return document
 
     def generate(
         self,
@@ -71,19 +81,23 @@ class DocumentService:
         current_user: User,
     ) -> Document:
         project = self.projects.get_project(project_id, current_user)
+        self.subscriptions.ensure_quota_available(current_user)
         provider = get_ai_provider()
         prompt = build_generation_prompt(project, document_type, instructions)
         content = provider.generate(SYSTEM_PROMPT, prompt)
-        return self._save_new_version(project.id, document_type, content, instructions, provider.name)
+        return self._save_new_version(
+            project.id, document_type, content, instructions, provider.name, current_user
+        )
 
     def regenerate(self, project_id: int, document_id: int, current_user: User) -> Document:
         project = self.projects.get_project(project_id, current_user)
         source = self._get_document_or_404(project.id, document_id)
+        self.subscriptions.ensure_quota_available(current_user)
         provider = get_ai_provider()
         prompt = build_generation_prompt(project, source.document_type, source.instructions)
         content = provider.generate(SYSTEM_PROMPT, prompt)
         return self._save_new_version(
-            project.id, source.document_type, content, source.instructions, provider.name
+            project.id, source.document_type, content, source.instructions, provider.name, current_user
         )
 
     def improve(
@@ -91,19 +105,21 @@ class DocumentService:
     ) -> Document:
         project = self.projects.get_project(project_id, current_user)
         source = self._get_document_or_404(project.id, document_id)
+        self.subscriptions.ensure_quota_available(current_user)
         provider = get_ai_provider()
         prompt = build_improve_prompt(project, source.document_type, source.content, instruction)
         content = provider.generate(SYSTEM_PROMPT, prompt)
         return self._save_new_version(
-            project.id, source.document_type, content, instruction, provider.name
+            project.id, source.document_type, content, instruction, provider.name, current_user
         )
 
     def shorten(self, project_id: int, document_id: int, current_user: User) -> Document:
         project = self.projects.get_project(project_id, current_user)
         source = self._get_document_or_404(project.id, document_id)
+        self.subscriptions.ensure_quota_available(current_user)
         provider = get_ai_provider()
         prompt = build_shorten_prompt(project, source.document_type, source.content)
         content = provider.generate(SYSTEM_PROMPT, prompt)
         return self._save_new_version(
-            project.id, source.document_type, content, source.instructions, provider.name
+            project.id, source.document_type, content, source.instructions, provider.name, current_user
         )

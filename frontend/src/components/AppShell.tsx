@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", ready: true },
   { href: "/projects", label: "Mes projets", ready: true },
   { href: "/financements", label: "Financements", ready: true },
+  { href: "/abonnement", label: "Abonnement", ready: true },
   { href: "/documents", label: "Documents", ready: false },
   { href: "/profil", label: "Profil", ready: false },
 ];

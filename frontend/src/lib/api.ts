@@ -12,6 +12,7 @@ import type {
   ProjectStatus,
   ProjectType,
   ProductionMilestone,
+  UsageSummary,
   User,
 } from "./types";
 
@@ -260,4 +261,6 @@ export const api = {
       method: "DELETE",
       token,
     }),
+
+  getUsage: (token: string) => request<UsageSummary>("/subscription/usage", { token }),
 };

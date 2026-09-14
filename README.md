@@ -6,15 +6,16 @@ SaaS destiné aux auteurs, réalisateurs et producteurs africains — développe
 de projets audiovisuels, génération de documents assistée par IA, recherche
 et matching de financements, budgets et export de dossier.
 
-> **Statut : MVP — Phases 1, 2, 3 et 4 livrées.** Authentification, gestion
-> des utilisateurs, CRUD projets, tableau de bord, AI Writer (génération de
+> **Statut : MVP — Phases 1 à 5 livrées.** Authentification, gestion des
+> utilisateurs, CRUD projets, tableau de bord, AI Writer (génération de
 > documents par IA, versionnés), Funding Intelligence (recherche et matching
-> à score explicable sur des financements réels) et Budget & plan de
+> à score explicable sur des financements réels), Budget & plan de
 > financement (catégories, sous-totaux calculés, calendrier de production)
-> sont réellement fonctionnels et testés. Les autres modules du prompt
-> maître (Abonnements, n8n) ne sont **pas encore implémentés** — voir
+> et Monétisation (plans Gratuit/Pro/Studio, crédits IA réellement
+> appliqués) sont réellement fonctionnels et testés. Seul le module n8n
+> (Phase 6) n'est **pas encore implémenté** — voir
 > [docs/known-issues.md](docs/known-issues.md) pour le détail honnête de
-> ce qui manque.
+> ce qui manque, notamment l'absence de paiement en ligne réel.
 
 ## Stack
 
@@ -148,10 +149,15 @@ npm run build
 
 ## 6. Comptes de démonstration (après `python scripts/seed.py`)
 
-| Email | Mot de passe | Rôle |
-|---|---|---|
-| demo.realisatrice@filmfundafrica.dev | Demo1234! | Réalisatrice |
-| demo.producteur@filmfundafrica.dev | Demo1234! | Producteur |
+| Email | Mot de passe | Rôle | Plan |
+|---|---|---|---|
+| demo.realisatrice@filmfundafrica.dev | Demo1234! | Réalisatrice | Gratuit |
+| demo.producteur@filmfundafrica.dev | Demo1234! | Producteur | Pro |
+| demo.admin@filmfundafrica.dev | Demo1234! | Administratrice | Studio |
+
+Le compte admin peut changer le plan d'un autre utilisateur via
+`PUT /api/v1/admin/users/{user_id}/plan` (aucune interface graphique
+d'administration pour l'instant — voir known-issues.md).
 
 ## 7. Déploiement
 
@@ -162,7 +168,7 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
 
 ---
 
-## Rapport de livraison — Phases 1, 2, 3 et 4
+## Rapport de livraison — Phases 1 à 5
 
 ### FEATURES IMPLEMENTED
 
@@ -216,20 +222,34 @@ utilisez des secrets gérés (pas de `.env` en clair), et activez HTTPS.
   navigation avec modules futurs clairement marqués "Bientôt"
 - Design premium sobre et cinématographique (fond sombre, accents or)
 - Docker Compose (frontend + backend + postgres, n8n en option)
-- Seed de démonstration (2 utilisateurs, 3 projets, 7 financements réels)
-- 33 tests backend automatisés, exécutés contre une vraie base PostgreSQL
+- **Monétisation (Phase 5)** : plans `FREE` (10 crédits IA/mois), `PRO`
+  (100/mois) et `STUDIO` (illimité). 1 crédit = 1 appel réussi à l'AI
+  Writer (generate/regenerate/improve/shorten) — un appel qui échoue ne
+  consomme jamais de crédit (testé explicitement). Quota réellement
+  appliqué : `HTTPException 402` avec message clair au-delà du quota.
+  Page `/abonnement` (usage en cours, comparatif des plans). Pas de
+  paiement en self-service : changer de plan est une action **admin**
+  (`PUT /api/v1/admin/users/{user_id}/plan`, protégée par le rôle
+  `UserType.ADMIN`) plutôt qu'un faux bouton de paiement qui ne
+  débiterait rien.
+- Seed de démonstration (3 utilisateurs — dont un compte admin —, 3
+  projets, 7 financements réels)
+- 38 tests backend automatisés, exécutés contre une vraie base PostgreSQL
   (AI Writer forcé sur le provider `local` en tests — jamais d'appel réseau
   ni de dépendance à une clé API dans la suite automatisée ; le matching
-  de financements et les calculs de budget sont déterministes, sans IA)
+  de financements, les calculs de budget et les quotas de crédits sont
+  déterministes, sans IA)
 - Build frontend (TypeScript strict + ESLint) sans erreur
 
 ### FEATURES PARTIALLY IMPLEMENTED
 
 - Réinitialisation de mot de passe : schémas définis, endpoint et envoi
   d'email **non branchés**
-- Système de rôles : le champ `user_type` existe mais aucune autorisation
-  différenciée par rôle n'est encore appliquée (tout utilisateur authentifié
-  a les mêmes droits sur ses propres données)
+- Système de rôles : `UserType.ADMIN` a maintenant un premier usage réel
+  d'autorisation différenciée (changer le plan d'un utilisateur), mais
+  c'est le seul — pas encore de véritable interface d'administration, et
+  les autres types de rôle (`AUTHOR`/`DIRECTOR`/`PRODUCER`/`INSTITUTION`)
+  restent purement déclaratifs (mêmes droits sur leurs propres données).
 
 ### KNOWN ISSUES
 
@@ -247,19 +267,19 @@ Voir `.env.example` (racine) et `frontend/.env.local.example`.
 Voir sections 3 et 4 ci-dessus (`docker compose up --build`, ou backend +
 frontend séparément).
 
-### NEXT STEPS (Phase 5 et suivantes, cf. prompt maître)
+### NEXT STEPS (Phase 6 et suivantes, cf. prompt maître)
 
-1. **Phase 5 — Monétisation** : plans d'abonnement, crédits IA configurables
-   (l'AI Writer n'a aujourd'hui aucune limite de quota par utilisateur).
-2. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
+1. **Phase 6 — Automatisation** : workflows n8n de veille des financements,
    notifications (ex. nouvelle session de dépôt sur un fonds suivi).
-3. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
+2. Durcissement sécurité avant prod : cookies httpOnly, rate limiting,
    audit logs, OAuth Google.
-4. AI Writer : ajouter un provider OpenAI (l'abstraction le permet sans
+3. AI Writer : ajouter un provider OpenAI (l'abstraction le permet sans
    changement d'API), streaming de la réponse IA, édition manuelle du
    contenu généré avant sauvegarde.
-5. Funding Intelligence : élargir la liste de financements au-delà des 7
+4. Funding Intelligence : élargir la liste de financements au-delà des 7
    premiers, ajouter le suivi de dates limites réelles (actuellement non
    stocké, voir known-issues.md).
-6. Budget : export PDF/Excel, conversion de devise indicative, plan de
+5. Budget : export PDF/Excel, conversion de devise indicative, plan de
    financement (rapprochement budget ↔ financements obtenus).
+6. Monétisation : paiement en ligne réel (Stripe ou équivalent), pour que
+   le changement de plan ne soit plus une action admin-only.

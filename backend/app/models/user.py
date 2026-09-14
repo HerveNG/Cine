@@ -15,6 +15,12 @@ class UserType(str, enum.Enum):
     ADMIN = "ADMIN"
 
 
+class SubscriptionPlan(str, enum.Enum):
+    FREE = "FREE"
+    PRO = "PRO"
+    STUDIO = "STUDIO"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -32,6 +38,11 @@ class User(Base):
 
     user_type: Mapped[UserType] = mapped_column(
         Enum(UserType, name="user_type"), default=UserType.AUTHOR, nullable=False
+    )
+    plan: Mapped[SubscriptionPlan] = mapped_column(
+        Enum(SubscriptionPlan, name="subscription_plan"),
+        default=SubscriptionPlan.FREE,
+        nullable=False,
     )
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

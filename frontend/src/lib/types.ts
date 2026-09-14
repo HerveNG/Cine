@@ -1,5 +1,26 @@
 export type UserType = "AUTHOR" | "DIRECTOR" | "PRODUCER" | "INSTITUTION" | "ADMIN";
 
+export type SubscriptionPlan = "FREE" | "PRO" | "STUDIO";
+
+export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
+  FREE: "Gratuit",
+  PRO: "Pro",
+  STUDIO: "Studio",
+};
+
+export const PLAN_CREDIT_LIMITS: Record<SubscriptionPlan, number | null> = {
+  FREE: 10,
+  PRO: 100,
+  STUDIO: null,
+};
+
+export interface UsageSummary {
+  plan: SubscriptionPlan;
+  credits_used: number;
+  credits_limit: number | null;
+  credits_remaining: number | null;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -10,6 +31,7 @@ export interface User {
   profession: string | null;
   photo_url: string | null;
   user_type: UserType;
+  plan: SubscriptionPlan;
   is_active: boolean;
   created_at: string;
 }

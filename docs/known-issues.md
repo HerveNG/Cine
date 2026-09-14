@@ -20,10 +20,9 @@ ne l'est pas.
 
 ## AI Writer (Phase 2) — limites connues
 
-- **Pas de quota/crédits** : n'importe quel utilisateur authentifié peut
-  générer un nombre illimité de documents (chaque appel consomme de vraies
-  requêtes Anthropic, donc du budget réel). Le système de crédits IA est
-  prévu en Phase 5.
+- **Quota de crédits appliqué depuis la Phase 5** : `FREE` = 10
+  générations/mois, `PRO` = 100/mois, `STUDIO` = illimité. Voir la section
+  "Monétisation" ci-dessous.
 - **Un seul provider réel branché** : `AnthropicProvider` (Claude). L'
   abstraction (`app/services/ai/base.py`) permet d'ajouter un provider
   OpenAI sans changer les endpoints, mais ce n'est pas fait.
@@ -77,12 +76,28 @@ ne l'est pas.
   projet et les financements compatibles (Phase 3) ne sont pas encore
   reliés (ex. "combien reste-t-il à financer ?").
 
+## Monétisation (Phase 5) — limites connues
+
+- **Pas de paiement en ligne réel** : aucune intégration Stripe (ou
+  équivalent). Changer de plan est une action **administrative**
+  (`PUT /api/v1/admin/users/{user_id}/plan`, réservée à `UserType.ADMIN`)
+  — un choix délibéré plutôt qu'un faux bouton "Upgrade" qui ne
+  débiterait rien et laisserait n'importe qui s'auto-attribuer plus de
+  crédits.
+- **Paliers fixes en dur** : `PLAN_LIMITS` (`backend/app/services/subscription_service.py`)
+  n'est pas configurable depuis l'application — changer un quota
+  nécessite une modification de code.
+- **Historique d'usage non exposé aux administrateurs** : `AICreditUsage`
+  est un ledger auditable en base, mais il n'existe pas encore de vue
+  d'ensemble (ex. tous les utilisateurs et leur consommation) — seul
+  l'utilisateur voit son propre usage via `/abonnement`.
+
 ## Fonctionnalités non implémentées (par design, cf. phasage du prompt maître)
 
-- Abonnements, crédits IA — Phase 5.
 - n8n, veille automatisée, notifications — Phase 6.
 - Export PDF/DOCX/ZIP — non implémenté.
-- Administration (dashboard admin) — non implémenté.
+- Administration (dashboard admin) — non implémenté ; seul un endpoint
+  API admin-only existe (changement de plan, Phase 5), pas d'interface.
 - Internationalisation (FR/EN) — l'interface est en français uniquement.
 
 Le tableau de bord et la page projet reflètent honnêtement cet état : les

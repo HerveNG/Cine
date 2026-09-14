@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-from app.models.user import UserType
+from app.models.user import SubscriptionPlan, UserType
 
 
 class UserBase(BaseModel):
@@ -33,5 +33,6 @@ class UserRead(UserBase):
 
     id: int
     photo_url: str | None = None
+    plan: SubscriptionPlan
     is_active: bool
     created_at: datetime

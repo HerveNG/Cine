@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.core.database import Base, SessionLocal, engine  # noqa: E402
 from app.core.security import hash_password  # noqa: E402
 from app.models.project import Project, ProjectStatus, ProjectType  # noqa: E402
-from app.models.user import User, UserType  # noqa: E402
+from app.models.user import SubscriptionPlan, User, UserType  # noqa: E402
 
 DEMO_USERS = [
     dict(
@@ -28,6 +28,7 @@ DEMO_USERS = [
         ville="Abidjan",
         profession="Réalisatrice",
         user_type=UserType.DIRECTOR,
+        plan=SubscriptionPlan.FREE,
     ),
     dict(
         email="demo.producteur@filmfundafrica.dev",
@@ -38,6 +39,18 @@ DEMO_USERS = [
         ville="Douala",
         profession="Producteur",
         user_type=UserType.PRODUCER,
+        plan=SubscriptionPlan.PRO,
+    ),
+    dict(
+        email="demo.admin@filmfundafrica.dev",
+        password="Demo1234!",
+        prenom="Fatou",
+        nom="Diop",
+        pays="Sénégal",
+        ville="Dakar",
+        profession="Administratrice",
+        user_type=UserType.ADMIN,
+        plan=SubscriptionPlan.STUDIO,
     ),
 ]
 
@@ -82,6 +95,9 @@ def run():
         for data in DEMO_USERS:
             existing = db.query(User).filter(User.email == data["email"]).first()
             if existing:
+                if existing.plan != data["plan"]:
+                    existing.plan = data["plan"]
+                    db.commit()
                 created_users.append(existing)
                 continue
             user = User(
@@ -93,6 +109,7 @@ def run():
                 ville=data["ville"],
                 profession=data["profession"],
                 user_type=data["user_type"],
+                plan=data["plan"],
             )
             db.add(user)
             db.commit()
